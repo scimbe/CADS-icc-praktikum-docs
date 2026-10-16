@@ -1,0 +1,36 @@
+.cads-ns-box {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.8rem;
+  margin: 0.8rem 0;
+  padding: 0.6rem 0.9rem;
+  border: 0.05rem solid var(--md-default-fg-color--lightest);
+  border-radius: 0.2rem;
+  background: var(--md-code-bg-color);
+}
+
+.cads-ns-box label {
+  font-weight: 700;
+}
+
+.cads-ns-input {
+  min-width: 11rem;
+  padding: 0.3rem 0.5rem;
+  font: inherit;
+  font-family: var(--md-code-font-family);
+  color: var(--md-default-fg-color);
+  background: var(--md-default-bg-color);
+  border: 0.05rem solid var(--md-default-fg-color--light);
+  border-radius: 0.15rem;
+}
+
+.cads-ns-status {
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+}
+
+.cads-ns-status.cads-ns-warn {
+  color: var(--md-typeset-color);
+  font-weight: 700;
+}

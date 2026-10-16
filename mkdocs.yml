@@ -77,8 +77,12 @@ markdown_extensions:
         - docs/.snippets
       check_paths: true
 
+extra_css:
+  - assets/css/ns-input.css
+
 extra_javascript:
   - assets/js/issue-feedback.js
+  - assets/js/ns-input.js
 
 nav:
   - Start: index.md
