@@ -189,9 +189,12 @@ erwartet **und** was ihr bekommt:
 
 ```bash
 kubectl -n $NS-lab08b exec <client> -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code}\n" http://frontend/
-kubectl -n $NS-lab08b exec <frontend-pod> -- curl -s -m3 -o /dev/null -w "frontend -> db: %{http_code}\n" http://db/
+kubectl -n $NS-lab08b exec <frontend-pod> -- wget -q -T3 -O /dev/null http://db/; echo "frontend -> db: Exit $?"
 kubectl -n $NS-lab08b exec <api-pod> -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code}\n" http://db/
 ```
+
+Das nginx-Image hat kein `curl`, deshalb `wget`: Exit `0` heißt „Antwort
+bekommen", alles andere „nicht erreicht".
 
 !!! question "Frage 2 · Bewertung"
     Wo ist euer Entwurf noch schwach (zum Beispiel: Wer darf `api` direkt

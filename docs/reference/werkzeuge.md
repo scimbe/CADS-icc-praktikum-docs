@@ -14,9 +14,8 @@ Netzwerkwerkzeugen: `ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0`. Es ist
 | `dig`, `getent` | Namensauflösung | 04 |
 | `curl` | HTTP, Zeitmessung mit `-w` | 03 bis 08 |
 | `tcpdump` | Mitschnitt auf einer Schnittstelle | 03, 04, 06 |
-| `ss` | TCP-Zustand und Parameter (`-ti`) | 06 |
+| `ss` | TCP-Zustand und Parameter (`-ti`) | 02, 06 |
 | `iperf3` | Durchsatz | 06 |
-| `nc`, `socat` | einfache Verbindungen | 06 |
 | `labsrv.py` | Testserver mit Pfaden `/healthz`, `/ready`, `/status/<code>`, `/slow`, `/big` | 03 bis 08 |
 
 !!! note "Was nicht geht"

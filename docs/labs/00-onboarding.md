@@ -105,6 +105,12 @@ kubectl -n $NS-lab00 run ohne --image=ghcr.io/scimbe/cads-icc-praktikum-tools:0.
 
 **Erwartung notieren:** Was passiert? Lest die Fehlermeldung genau.
 
+??? tip "Prüfstein"
+    Die Meldung beginnt mit `Forbidden` und `failed quota` und nennt, was fehlt:
+    `limits.cpu`, `limits.memory`, `requests.cpu` und `requests.memory`. Es ist
+    die Quote, die den Pod ablehnt, nicht euer Manifest. `kubectl get pods`
+    zeigt danach keinen Pod `ohne`.
+
 Jetzt mit Grenzen:
 
 ```bash
