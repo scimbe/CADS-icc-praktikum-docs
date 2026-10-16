@@ -1,0 +1,98 @@
+site_name: IP-Netze auf der ICC
+site_description: >-
+  Praktikum zu den zentralen Eigenschaften von IP-Netzen, durchgeführt auf
+  Kubernetes in der ICC: Adressierung, Routing, DNS, Filter, TCP und HTTP
+  hinter einem Load Balancer.
+site_url: https://scimbe.github.io/CADS-icc-praktikum-docs/
+docs_dir: docs
+copyright: "&copy; 2026 CADS AG"
+
+theme:
+  name: material
+  language: de
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Dunkelmodus aktivieren
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Hellmodus aktivieren
+  features:
+    - navigation.instant
+    - navigation.tabs
+    - navigation.top
+    - navigation.indexes
+    - content.code.copy
+    - content.tabs.link
+    - toc.follow
+    - search.suggest
+
+plugins:
+  - search
+  - glightbox:
+      auto_caption: true
+      caption_position: bottom
+  - i18n:
+      docs_structure: suffix
+      languages:
+        - locale: de
+          name: Deutsch
+          build: true
+          default: true
+      reconfigure_material: false
+
+validation:
+  omitted_files: warn
+  absolute_links: relative_to_docs
+  unrecognized_links: warn
+  anchors: warn
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - tables
+  - attr_list
+  - md_in_html
+  - pymdownx.keys
+  - toc:
+      permalink: true
+  - pymdownx.snippets:
+      base_path:
+        - docs/.snippets
+      check_paths: true
+
+extra_javascript:
+  - assets/js/issue-feedback.js
+
+nav:
+  - Start: index.md
+  - Praktika:
+      - "00 · Onboarding": labs/00-onboarding.md
+      - "01 · Adressierung": labs/01-adressierung.md
+      - "02 · ICMP, TTL & MTU": labs/02-icmp-ttl-mtu.md
+      - "03 · Virtuelle IPs": labs/03-virtuelle-ips.md
+      - "04 · DNS": labs/04-dns.md
+      - "05 · Filtern": labs/05-filtern.md
+      - "06 · TCP": labs/06-tcp.md
+      - "07 · HTTP hinter dem Load Balancer": labs/07-http-load-balancer.md
+      - "08 · Abschluss": labs/08-abschluss.md
+  - Referenz:
+      - "ICC und AWS im Vergleich": reference/aws-vergleich.md
+      - "Werkzeugkasten": reference/werkzeuge.md
+      - "Ressourcen und Aufräumen": reference/ressourcen.md

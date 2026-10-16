@@ -1,0 +1,1 @@
+[:material-comment-alert-outline:](https://github.com/scimbe/CADS-icc-praktikum-docs/issues/new?template=doku-verbesserung.yml&labels=doku,aus-praktikum){: .cads-issue-feedback-link title="Verbesserung vorschlagen" aria-label="Verbesserung vorschlagen (GitHub-Issue)" }
