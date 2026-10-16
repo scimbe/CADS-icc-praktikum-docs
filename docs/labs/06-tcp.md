@@ -27,47 +27,92 @@ Ein Server (`srv`), ein Client (`a`) und ein Störer (`gift`). Der Störer ist e
 **TCP-Proxy** (toxiproxy), in den ihr per HTTP-Aufruf Fehler einbaut. Er
 braucht keine Sonderrechte, anders als `tc`, das hier gesperrt ist.
 
-```bash
-export NS=wab123
-kubectl create ns $NS-lab06
-until kubectl auth can-i create pods -n $NS-lab06 | grep -q yes \
-   && kubectl auth can-i get pods -n $NS-lab06 | grep -q yes; do sleep 1; done
+=== "Bash"
 
-kubectl -n $NS-lab06 apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata: {name: srv, labels: {app: srv}}
-spec:
-  containers:
-  - name: s
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    command: ["python3", "/opt/lab/labsrv.py"]
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: gift, labels: {app: gift}}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/shopify/toxiproxy:2.9.0
-    args: ["-host", "0.0.0.0"]
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: a}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
-EOF
-kubectl -n $NS-lab06 wait --for=condition=Ready pod --all --timeout=180s
-export SRV=$(kubectl -n $NS-lab06 get pod srv -o jsonpath='{.status.podIP}')
-export GIFT=$(kubectl -n $NS-lab06 get pod gift -o jsonpath='{.status.podIP}')
-A() { kubectl -n $NS-lab06 exec a -- "$@"; }
-```
+    ```bash
+    export NS=wab123
+    kubectl create ns $NS-lab06
+    until kubectl auth can-i create pods -n $NS-lab06 | grep -q yes \
+       && kubectl auth can-i get pods -n $NS-lab06 | grep -q yes; do sleep 1; done
+
+    kubectl -n $NS-lab06 apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: srv, labels: {app: srv}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: gift, labels: {app: gift}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/shopify/toxiproxy:2.9.0
+        args: ["-host", "0.0.0.0"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    EOF
+    kubectl -n $NS-lab06 wait --for=condition=Ready pod --all --timeout=180s
+    export SRV=$(kubectl -n $NS-lab06 get pod srv -o jsonpath='{.status.podIP}')
+    export GIFT=$(kubectl -n $NS-lab06 get pod gift -o jsonpath='{.status.podIP}')
+    A() { kubectl -n $NS-lab06 exec a -- "$@"; }
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"
+    kubectl create ns "$NS-lab06"
+    do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab06") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab06") -eq "yes")
+
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: srv, labels: {app: srv}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: gift, labels: {app: gift}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/shopify/toxiproxy:2.9.0
+        args: ["-host", "0.0.0.0"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    '@ | kubectl -n "$NS-lab06" apply -f -
+    kubectl -n "$NS-lab06" wait --for=condition=Ready pod --all --timeout=180s
+    $SRV = kubectl -n "$NS-lab06" get pod srv -o jsonpath='{.status.podIP}'
+    $GIFT = kubectl -n "$NS-lab06" get pod gift -o jsonpath='{.status.podIP}'
+    function A { kubectl -n "$NS-lab06" exec a -- @args }
+    ```
 
 ## Aufgabe 1 · Handshake und Abbau
 
@@ -80,9 +125,17 @@ A() { kubectl -n $NS-lab06 exec a -- "$@"; }
 Leitung, bevor das erste Byte der Anfrage fließt? Welche TCP-Flags (`S`, `.`, `P`,
 `F`) erwartet ihr in welcher Reihenfolge?
 
-```bash
-A sh -c "timeout 5 tcpdump -ni eth0 -c12 'tcp port 8080' & sleep 1; curl -s -o /dev/null http://$SRV:8080/; wait"
-```
+=== "Bash"
+
+    ```bash
+    A sh -c "timeout 5 tcpdump -ni eth0 -c12 'tcp port 8080' & sleep 1; curl -s -o /dev/null http://$SRV:8080/; wait"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A sh -c "timeout 5 tcpdump -ni eth0 -c12 'tcp port 8080' & sleep 1; curl -s -o /dev/null http://${SRV}:8080/; wait"
+    ```
 
 !!! question "Frage 1"
     Welche drei Pakete bilden den Handshake? Welche **Option** bietet jede Seite
@@ -104,9 +157,17 @@ A sh -c "timeout 5 tcpdump -ni eth0 -c12 'tcp port 8080' & sleep 1; curl -s -o /
 Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Schaut in eine laufende
 Übertragung hinein:
 
-```bash
-A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
-```
+=== "Bash"
+
+    ```bash
+    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    ```
 
 **Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
 (Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
@@ -128,17 +189,36 @@ eine neue Verbindung?
 Ihr legt einen Proxy `web` an, der auf Port 9000 lauscht und an den Server
 weiterreicht, und messt die Zeit zunächst ohne Störung:
 
-```bash
-A curl -s -XPOST http://$GIFT:8474/proxies -d "{\"name\":\"web\",\"listen\":\"0.0.0.0:9000\",\"upstream\":\"$SRV:8080\"}"; echo
-A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
-```
+=== "Bash"
+
+    ```bash
+    A curl -s -XPOST http://$GIFT:8474/proxies -d "{\"name\":\"web\",\"listen\":\"0.0.0.0:9000\",\"upstream\":\"$SRV:8080\"}"; echo
+    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $body = @{name="web"; listen="0.0.0.0:9000"; upstream="${SRV}:8080"} | ConvertTo-Json -Compress
+    A curl -s -XPOST "http://${GIFT}:8474/proxies" -d $body; ""
+    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    ```
 
 Jetzt 300 ms Verzögerung auf der Antwort:
 
-```bash
-A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; echo
-A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
-```
+=== "Bash"
+
+    ```bash
+    A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; echo
+    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; ""
+    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    ```
 
 **Vorhersage:** Wie viel länger dauert die Anfrage? Wird auch der **Verbindungsaufbau**
 (`connect`) langsamer?
@@ -158,24 +238,47 @@ A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect}
 Räumt die Verzögerung weg und baut nacheinander drei andere Störungen ein. Notiert
 jeweils **curl-Code** und **Zeit**.
 
-```bash
-A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/lat
+=== "Bash"
 
-# 1) Reset: die Gegenseite bricht die Verbindung ab
-A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; echo
-A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
-A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/rst
+    ```bash
+    A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/lat
 
-# 2) Bandbreite: 100 KB/s
-A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; echo
-A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://$GIFT:9000/big?kb=1024"
-A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/bw
+    # 1) Reset: die Gegenseite bricht die Verbindung ab
+    A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; echo
+    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/rst
 
-# 3) Timeout: nichts kommt zurueck
-A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; echo
-A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
-A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/to
-```
+    # 2) Bandbreite: 100 KB/s
+    A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; echo
+    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://$GIFT:9000/big?kb=1024"
+    A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/bw
+
+    # 3) Timeout: nichts kommt zurueck
+    A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; echo
+    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/to
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/lat"
+
+    # 1) Reset: die Gegenseite bricht die Verbindung ab
+    A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; ""
+    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/rst"
+
+    # 2) Bandbreite: 100 KB/s
+    A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; ""
+    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://${GIFT}:9000/big?kb=1024"
+    A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/bw"
+
+    # 3) Timeout: nichts kommt zurueck
+    A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; ""
+    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/to"
+    ```
 
 **Vorhersage:** Welcher Fehler endet **sofort**, welcher erst nach dem eigenen
 Zeitlimit (`-m`), welcher gar nicht, sondern dauert einfach? Welcher curl-Code
@@ -197,51 +300,101 @@ Zwei Messungen mit `iperf3`: dieselbe Strecke einmal innerhalb eines Knotens, ei
 über die Knotengrenze. Beide Pods, der Server und der Client, laufen immer mit
 den gleichen Grenzen.
 
-```bash
-kubectl -n $NS-lab06 apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata: {name: ip-srv, labels: {app: ip-srv}}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    command: ["iperf3", "-s"]
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: ip-nah}
-spec:
-  affinity:
-    podAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector: {matchLabels: {app: ip-srv}}
-        topologyKey: kubernetes.io/hostname
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: ip-fern}
-spec:
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector: {matchLabels: {app: ip-srv}}
-        topologyKey: kubernetes.io/hostname
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
-EOF
-kubectl -n $NS-lab06 wait --for=condition=Ready pod/ip-srv pod/ip-nah pod/ip-fern --timeout=180s
-export IPS=$(kubectl -n $NS-lab06 get pod ip-srv -o jsonpath='{.status.podIP}')
-kubectl -n $NS-lab06 exec ip-nah  -- iperf3 -c $IPS -t 5 | tail -4
-kubectl -n $NS-lab06 exec ip-fern -- iperf3 -c $IPS -t 5 | tail -4
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab06 apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: ip-srv, labels: {app: ip-srv}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["iperf3", "-s"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: ip-nah}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: ip-srv}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: ip-fern}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: ip-srv}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    EOF
+    kubectl -n $NS-lab06 wait --for=condition=Ready pod/ip-srv pod/ip-nah pod/ip-fern --timeout=180s
+    export IPS=$(kubectl -n $NS-lab06 get pod ip-srv -o jsonpath='{.status.podIP}')
+    kubectl -n $NS-lab06 exec ip-nah  -- iperf3 -c $IPS -t 5 | tail -4
+    kubectl -n $NS-lab06 exec ip-fern -- iperf3 -c $IPS -t 5 | tail -4
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: ip-srv, labels: {app: ip-srv}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["iperf3", "-s"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: ip-nah}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: ip-srv}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: ip-fern}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: ip-srv}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    '@ | kubectl -n "$NS-lab06" apply -f -
+    kubectl -n "$NS-lab06" wait --for=condition=Ready pod/ip-srv pod/ip-nah pod/ip-fern --timeout=180s
+    $IPS = kubectl -n "$NS-lab06" get pod ip-srv -o jsonpath='{.status.podIP}'
+    kubectl -n "$NS-lab06" exec ip-nah  -- iperf3 -c $IPS -t 5 | Select-Object -Last 4
+    kubectl -n "$NS-lab06" exec ip-fern -- iperf3 -c $IPS -t 5 | Select-Object -Last 4
+    ```
 
 **Vorhersage:** Welcher Weg ist schneller, und um welchen Faktor (grob)? In welcher
 Spalte erwartet ihr Probleme (`Retr`)?

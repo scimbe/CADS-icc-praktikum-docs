@@ -20,36 +20,70 @@ Nach dem Versuch könnt ihr …
 
 ## Aufbau
 
-```bash
-export NS=wab123
-kubectl create ns $NS-lab02
-until kubectl auth can-i create pods -n $NS-lab02 | grep -q yes \
-   && kubectl auth can-i get pods -n $NS-lab02 | grep -q yes; do sleep 1; done
+=== "Bash"
 
-kubectl -n $NS-lab02 apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata: {name: a, labels: {app: a}}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: srv, labels: {app: srv}}
-spec:
-  containers:
-  - name: s
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    command: ["python3", "/opt/lab/labsrv.py"]
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
-EOF
-kubectl -n $NS-lab02 wait --for=condition=Ready pod --all --timeout=180s
-export SRV=$(kubectl -n $NS-lab02 get pod srv -o jsonpath='{.status.podIP}')
-A() { kubectl -n $NS-lab02 exec a -- "$@"; }
-```
+    ```bash
+    export NS=wab123
+    kubectl create ns $NS-lab02
+    until kubectl auth can-i create pods -n $NS-lab02 | grep -q yes \
+       && kubectl auth can-i get pods -n $NS-lab02 | grep -q yes; do sleep 1; done
+
+    kubectl -n $NS-lab02 apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a, labels: {app: a}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: srv, labels: {app: srv}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    EOF
+    kubectl -n $NS-lab02 wait --for=condition=Ready pod --all --timeout=180s
+    export SRV=$(kubectl -n $NS-lab02 get pod srv -o jsonpath='{.status.podIP}')
+    A() { kubectl -n $NS-lab02 exec a -- "$@"; }
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"
+    kubectl create ns "$NS-lab02"
+    do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab02") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab02") -eq "yes")
+
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a, labels: {app: a}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: srv, labels: {app: srv}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    '@ | kubectl -n "$NS-lab02" apply -f -
+    kubectl -n $NS-lab02 wait --for=condition=Ready pod --all --timeout=180s
+    $SRV = kubectl -n $NS-lab02 get pod srv -o jsonpath='{.status.podIP}'
+    function A { kubectl -n "$NS-lab02" exec a -- @args }
+    ```
 
 `A` führt einen Befehl im Pod `a` aus: `A ping …` bedeutet
 `kubectl -n $NS-lab02 exec a -- ping …`.
@@ -71,9 +105,17 @@ eigenen Adresse**.
 
 **Vorhersage:** Ihr schickt Pings mit TTL 1, 2 und 3. Wer antwortet jeweils?
 
-```bash
-for t in 1 2 3; do A ping -c1 -W2 -t $t $SRV; done
-```
+=== "Bash"
+
+    ```bash
+    for t in 1 2 3; do A ping -c1 -W2 -t $t $SRV; done
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    1..3 | ForEach-Object { A ping -c1 -W2 -t $_ $SRV }
+    ```
 
 !!! question "Frage 1"
     Bei welcher TTL erreicht der Ping den Zielpod? Welche Adressen sind die
@@ -122,10 +164,18 @@ A ping -c1 -W2 -M do -s 1423 $SRV
 Ohne DF-Flag dürfen Pakete zerlegt werden. Schickt ein großes Echo und beobachtet
 die Pakete auf der Leitung:
 
-```bash
-kubectl -n $NS-lab02 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c6 \
-  'icmp or ip[6:2] & 0x1fff != 0' & sleep 1; ping -c1 -W2 -s 3000 $SRV; wait"
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab02 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c6 \
+      'icmp or ip[6:2] & 0x1fff != 0' & sleep 1; ping -c1 -W2 -s 3000 $SRV; wait"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n $NS-lab02 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c6 'icmp or ip[6:2] & 0x1fff != 0' & sleep 1; ping -c1 -W2 -s 3000 $SRV; wait"
+    ```
 
 **Vorhersage:** In wie viele Stücke wird das 3000-Byte-Echo zerlegt, wenn jedes
 Stück höchstens die MTU lang ist?
@@ -144,10 +194,19 @@ Stück höchstens die MTU lang ist?
 Eine HTTP-Antwort von einem Megabyte kommt durch, obwohl sie viel größer als
 die MTU ist. Seht nach, welche Segmentgröße TCP wählt:
 
-```bash
-A curl -s -m10 -o /dev/null -w "code=%{http_code} bytes=%{size_download}\n" "http://$SRV:8080/big?kb=1024"
-A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
-```
+=== "Bash"
+
+    ```bash
+    A curl -s -m10 -o /dev/null -w "code=%{http_code} bytes=%{size_download}\n" "http://$SRV:8080/big?kb=1024"
+    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A curl -s -m10 -o /dev/null -w "code=%{http_code} bytes=%{size_download}\n" "http://${SRV}:8080/big?kb=1024"
+    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    ```
 
 **Vorhersage:** Welche **MSS** erwartet ihr bei einer MTU von 1450 und je 20 Byte IP-
 und TCP-Kopf? In der Ausgabe stehen `mss` und `pmtu`.

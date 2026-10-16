@@ -26,16 +26,30 @@ Die Kursleitung stellt die Datei `lab08.yaml` bereit. Sie enthält die defekten
 Dienste. **Lest sie nicht**, sonst überspringt ihr die Diagnose, und genau die
 ist die Übung.
 
-```bash
-export NS=wab123
-kubectl create ns $NS-lab08
-until kubectl auth can-i create pods -n $NS-lab08 | grep -q yes \
-   && kubectl auth can-i get pods -n $NS-lab08 | grep -q yes; do sleep 1; done
-kubectl -n $NS-lab08 apply -f lab08.yaml
-sleep 40
-kubectl -n $NS-lab08 get pods
-T() { kubectl -n $NS-lab08 exec t -- "$@"; }
-```
+=== "Bash"
+
+    ```bash
+    export NS=wab123
+    kubectl create ns $NS-lab08
+    until kubectl auth can-i create pods -n $NS-lab08 | grep -q yes \
+       && kubectl auth can-i get pods -n $NS-lab08 | grep -q yes; do sleep 1; done
+    kubectl -n $NS-lab08 apply -f lab08.yaml
+    sleep 40
+    kubectl -n $NS-lab08 get pods
+    T() { kubectl -n $NS-lab08 exec t -- "$@"; }
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"
+    kubectl create ns "$NS-lab08"
+    do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab08") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab08") -eq "yes")
+    kubectl -n "$NS-lab08" apply -f lab08.yaml
+    Start-Sleep 40
+    kubectl -n "$NS-lab08" get pods
+    function T { kubectl -n "$NS-lab08" exec t -- @args }
+    ```
 
 !!! tip "Wenn `apply` einen Conflict meldet"
     Ein **`Conflict` auf `resourcequotas`** ist harmlos. Führt denselben Befehl
@@ -75,11 +89,21 @@ Ziel: `http://kasse/` liefert **200** vom Pod `t` aus. Ihr dürft **das Label vo
     falsch gesetzten Health Check. Von außen sieht man nur „Connection
     refused", und die Pods sehen gesund aus.
 
-```bash
-kubectl -n $NS-lab08 get pods -l app=shop
-kubectl -n $NS-lab08 get endpoints shop --no-headers 2>/dev/null
-T curl -s -m3 -o /dev/null -w "code=%{http_code}\n" http://shop/
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab08 get pods -l app=shop
+    kubectl -n $NS-lab08 get endpoints shop --no-headers 2>/dev/null
+    T curl -s -m3 -o /dev/null -w "code=%{http_code}\n" http://shop/
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n "$NS-lab08" get pods -l app=shop
+    kubectl -n "$NS-lab08" get endpoints shop --no-headers 2>$null
+    T curl -s -m3 -o /dev/null -w "code=%{http_code}\n" http://shop/
+    ```
 
 Ziel: `http://shop/` liefert **200**. Ihr dürft den `shop` ändern.
 
@@ -136,10 +160,19 @@ dafür die ConfigMap `portal-conf` ändern und das Portal neu starten:
     Das ist ein klassischer Vorfall nach einem Sicherheitsaudit. Er hat fast
     immer dieselbe Ursache.
 
-```bash
-kubectl -n $NS-lab08 exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} t=%{time_total}\n" http://lager/
-kubectl -n $NS-lab08 exec lager-client -- getent hosts lager
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab08 exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} t=%{time_total}\n" http://lager/
+    kubectl -n $NS-lab08 exec lager-client -- getent hosts lager
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n "$NS-lab08" exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} t=%{time_total}\n" http://lager/
+    kubectl -n "$NS-lab08" exec lager-client -- getent hosts lager
+    ```
 
 Ziel: `lager-client` erreicht `http://lager/` **per Name**, und **nur** das Lager,
 sonst nichts. Erweitert die vorhandene Regel `lager-aus` minimal.
@@ -187,11 +220,21 @@ Papier. Wie viele NetworkPolicies braucht ihr, wenn ihr Ein- und Ausgang trennt?
 Prüft euren Entwurf mit diesen Messungen und schreibt für jede hin, was ihr
 erwartet **und** was ihr bekommt:
 
-```bash
-kubectl -n $NS-lab08b exec <client> -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code}\n" http://frontend/
-kubectl -n $NS-lab08b exec <frontend-pod> -- wget -q -T3 -O /dev/null http://db/; echo "frontend -> db: Exit $?"
-kubectl -n $NS-lab08b exec <api-pod> -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code}\n" http://db/
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab08b exec <client> -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code}\n" http://frontend/
+    kubectl -n $NS-lab08b exec <frontend-pod> -- wget -q -T3 -O /dev/null http://db/; echo "frontend -> db: Exit $?"
+    kubectl -n $NS-lab08b exec <api-pod> -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code}\n" http://db/
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n "$NS-lab08b" exec <client> -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code}\n" http://frontend/
+    kubectl -n "$NS-lab08b" exec <frontend-pod> -- wget -q -T3 -O /dev/null http://db/; "frontend -> db: Exit $LASTEXITCODE"
+    kubectl -n "$NS-lab08b" exec <api-pod> -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code}\n" http://db/
+    ```
 
 Das nginx-Image hat kein `curl`, deshalb `wget`: Exit `0` heißt „Antwort
 bekommen", alles andere „nicht erreicht".
@@ -209,9 +252,17 @@ bekommen", alles andere „nicht erreicht".
 
 ## Aufräumen
 
-```bash
-kubectl delete ns $NS-lab08 $NS-lab08b
-```
+=== "Bash"
+
+    ```bash
+    kubectl delete ns $NS-lab08 $NS-lab08b
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl delete ns "$NS-lab08" "$NS-lab08b"
+    ```
 
 ## Selbsttest
 

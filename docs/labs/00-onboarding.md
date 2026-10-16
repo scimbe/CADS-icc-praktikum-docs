@@ -24,18 +24,36 @@ Die ICC-Anleitung zum Einrichten von `kubectl` und zum Herunterladen der
 Token erzeugt (er gilt sieben Tage). Legt die Datei ab und sagt `kubectl`, wo sie
 liegt:
 
-```bash
-export KUBECONFIG=~/Downloads/kubeconfig
-kubectl config get-contexts
-```
+=== "Bash"
+
+    ```bash
+    export KUBECONFIG=~/Downloads/kubeconfig
+    kubectl config get-contexts
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $env:KUBECONFIG = "$HOME\Downloads\kubeconfig"
+    kubectl config get-contexts
+    ```
 
 !!! info "Euer Namespace"
     In dieser Anleitung heißt euer Namespace **`wab123`**. Bei euch steht an
-    dieser Stelle euer eigenes Kürzel. Ersetzt es überall. Am bequemsten ist
-    eine Variable:
+    dieser Stelle euer eigenes Kürzel. Am einfachsten tragt ihr es oben im Feld
+    „Euer Namespace" ein, dann stehen alle Befehle schon richtig da. Wer die
+    Befehle lieber von Hand anpasst, nutzt eine Variable:
+
+=== "Bash"
 
     ```bash
     export NS=wab123        # euer Namespace
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"          # euer Namespace
     ```
 
 ## Aufgabe 1 · Wo seid ihr?
@@ -78,11 +96,20 @@ kubectl create ns $NS-lab00
 Direkt nach dem Anlegen kann es kurz dauern, bis eure Rechte im neuen Namespace
 greifen. Wartet darauf, statt zu raten:
 
-```bash
-until kubectl auth can-i create pods -n $NS-lab00 | grep -q yes \
-   && kubectl auth can-i get pods -n $NS-lab00 | grep -q yes; do sleep 1; done
-echo "bereit"
-```
+=== "Bash"
+
+    ```bash
+    until kubectl auth can-i create pods -n $NS-lab00 | grep -q yes \
+       && kubectl auth can-i get pods -n $NS-lab00 | grep -q yes; do sleep 1; done
+    echo "bereit"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab00") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab00") -eq "yes")
+    "bereit"
+    ```
 
 !!! tip "Merke"
     Ein „forbidden"-Fehler direkt nach `create ns` ist kein Fehler in eurem
@@ -113,23 +140,45 @@ kubectl -n $NS-lab00 run ohne --image=ghcr.io/scimbe/cads-icc-praktikum-tools:0.
 
 Jetzt mit Grenzen:
 
-```bash
-kubectl -n $NS-lab00 apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata:
-  name: tools
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources:
-      requests: {cpu: 10m, memory: 32Mi}
-      limits:   {cpu: 200m, memory: 128Mi}
-EOF
-kubectl -n $NS-lab00 wait --for=condition=Ready pod/tools --timeout=120s
-kubectl -n $NS-lab00 exec -it tools -- sh -c 'id; ip -br a; ip r'
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab00 apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: tools
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits:   {cpu: 200m, memory: 128Mi}
+    EOF
+    kubectl -n $NS-lab00 wait --for=condition=Ready pod/tools --timeout=120s
+    kubectl -n $NS-lab00 exec -it tools -- sh -c 'id; ip -br a; ip r'
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: tools
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources:
+          requests: {cpu: 10m, memory: 32Mi}
+          limits:   {cpu: 200m, memory: 128Mi}
+    '@ | kubectl -n "$NS-lab00" apply -f -
+    kubectl -n "$NS-lab00" wait --for=condition=Ready pod/tools --timeout=120s
+    kubectl -n "$NS-lab00" exec -it tools -- sh -c 'id; ip -br a; ip r'
+    ```
 
 !!! question "Frage 2"
     Welche IP hat euer Pod? Welche Maske? Notiert beides, in Versuch 01

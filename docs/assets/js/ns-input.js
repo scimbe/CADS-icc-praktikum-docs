@@ -38,14 +38,27 @@
     document.querySelectorAll(".md-content code").forEach(function (code) {
       var gang = document.createTreeWalker(code, NodeFilter.SHOW_TEXT);
       var knoten;
-      while ((knoten = gang.nextNode())) {
-        var text = original.has(knoten) ? original.get(knoten) : knoten.nodeValue;
-        if (text.indexOf(BEISPIEL) === -1 && text.indexOf(VARIABLE) === -1) { continue; }
-        original.set(knoten, text);
-        knoten.nodeValue = wert
-          ? text.split(BEISPIEL).join(wert).split(VARIABLE).join(wert)
-          : text;
-      }
+      var alle = [];
+      while ((knoten = gang.nextNode())) { alle.push(knoten); }
+      alle.forEach(function (k, i) {
+        var text = original.has(k) ? original.get(k) : k.nodeValue;
+        if (text.indexOf(BEISPIEL) === -1 && text.indexOf(VARIABLE) === -1) { return; }
+        original.set(k, text);
+        /* "$NS = ..." (Zuweisung in PowerShell) bleibt stehen, sonst wird die Variable selbst
+           ersetzt. Der Hervorhebung legt "$NS" und "=" in getrennte Textknoten, daher wird
+           der Text dahinter ueber alle folgenden Knoten geprueft. */
+        var dahinter = "";
+        for (var j = i + 1; j < alle.length && dahinter.length < 4; j++) {
+          dahinter += original.has(alle[j]) ? original.get(alle[j]) : alle[j].nodeValue;
+        }
+        var zuweisung = /^\s*=/.test(dahinter);
+        var neu = text.split(BEISPIEL).join(wert);
+        neu = neu.replace(/\$NS(?![A-Za-z0-9_])/g, function (treffer, pos, ganz) {
+          var rest = ganz.slice(pos + treffer.length);
+          return (/^\s*=/.test(rest) || (rest === "" && zuweisung)) ? treffer : wert;
+        });
+        k.nodeValue = wert ? neu : text;
+      });
     });
   }
 

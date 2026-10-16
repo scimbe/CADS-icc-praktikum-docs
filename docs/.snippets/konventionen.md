@@ -10,10 +10,12 @@
       sofort (auch dort, wo die Variable NS steht), und ihr könnt sie direkt
       kopieren. Das Feld merkt sich den Wert
       nur in eurem Browser.
-    - **Betriebssystem:** Die Befehle sind für eine Bash-Shell geschrieben
-      (macOS-Terminal, Linux). Unter **Windows** nutzt ihr **WSL 2** (Ubuntu)
-      oder **Git Bash**. In der PowerShell funktionieren Here-Documents
-      (`<<'EOF'`), `until`-Schleifen und die Funktion `T` nicht.
+    - **Betriebssystem:** Wo die Schreibweise abweicht, stehen die Befehle
+      in zwei Reitern: **Bash** (macOS, Linux, unter Windows auch WSL 2 oder
+      Git Bash) und **PowerShell** (Windows). Eure Wahl gilt für alle Seiten.
+      Die PowerShell-Befehle brauchen **PowerShell 7.4 oder neuer**
+      (`winget install Microsoft.PowerShell`, Programm `pwsh`), nicht die
+      blaue Windows PowerShell 5.1. Die `cmd.exe` wird nicht unterstützt.
     - **Jeder Versuch bekommt einen eigenen Sub-Namespace** (`$NS-labNN`).
       Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`.
     - **Werkzeug-Image:** `ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0`. Es

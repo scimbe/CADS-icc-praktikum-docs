@@ -24,56 +24,110 @@ Nach dem Versuch könnt ihr …
 
 Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04b`.
 
-```bash
-export NS=wab123
-for n in lab04 lab04b; do
-  kubectl create ns $NS-$n
-  until kubectl auth can-i create pods -n $NS-$n | grep -q yes \
-     && kubectl auth can-i get pods -n $NS-$n | grep -q yes; do sleep 1; done
-done
+=== "Bash"
 
-kubectl -n $NS-lab04 apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata: {name: srv, labels: {app: srv}}
-spec:
-  containers:
-  - name: s
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    command: ["python3", "/opt/lab/labsrv.py"]
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
----
-apiVersion: v1
-kind: Service
-metadata: {name: kasse}
-spec:
-  selector: {app: srv}
-  ports: [{port: 80, targetPort: 8080}]
----
-apiVersion: v1
-kind: Pod
-metadata: {name: a}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
-EOF
-kubectl -n $NS-lab04b apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata: {name: c}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
-EOF
-kubectl -n $NS-lab04 wait --for=condition=Ready pod --all --timeout=180s
-kubectl -n $NS-lab04b wait --for=condition=Ready pod --all --timeout=180s
-A() { kubectl -n $NS-lab04 exec a -- "$@"; }
-C() { kubectl -n $NS-lab04b exec c -- "$@"; }
-```
+    ```bash
+    export NS=wab123
+    for n in lab04 lab04b; do
+      kubectl create ns $NS-$n
+      until kubectl auth can-i create pods -n $NS-$n | grep -q yes \
+         && kubectl auth can-i get pods -n $NS-$n | grep -q yes; do sleep 1; done
+    done
+
+    kubectl -n $NS-lab04 apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: srv, labels: {app: srv}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata: {name: kasse}
+    spec:
+      selector: {app: srv}
+      ports: [{port: 80, targetPort: 8080}]
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    EOF
+    kubectl -n $NS-lab04b apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: c}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    EOF
+    kubectl -n $NS-lab04 wait --for=condition=Ready pod --all --timeout=180s
+    kubectl -n $NS-lab04b wait --for=condition=Ready pod --all --timeout=180s
+    A() { kubectl -n $NS-lab04 exec a -- "$@"; }
+    C() { kubectl -n $NS-lab04b exec c -- "$@"; }
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"
+    foreach ($n in "lab04", "lab04b") {
+      kubectl create ns "$NS-$n"
+      do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-$n") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-$n") -eq "yes")
+    }
+
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: srv, labels: {app: srv}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata: {name: kasse}
+    spec:
+      selector: {app: srv}
+      ports: [{port: 80, targetPort: 8080}]
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    '@ | kubectl -n "$NS-lab04" apply -f -
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: c}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    '@ | kubectl -n "$NS-lab04b" apply -f -
+    kubectl -n "$NS-lab04" wait --for=condition=Ready pod --all --timeout=180s
+    kubectl -n "$NS-lab04b" wait --for=condition=Ready pod --all --timeout=180s
+    function A { kubectl -n "$NS-lab04" exec a -- @args }
+    function C { kubectl -n "$NS-lab04b" exec c -- @args }
+    ```
 
 ## Aufgabe 1 · Die resolv.conf
 
@@ -105,12 +159,23 @@ wie vielen Punkten im Namen wird er **zuerst** unverändert angefragt?
     Dasselbe Programm löst denselben Namen anders auf als `dig`. Dieser
     Unterschied ist die Ursache vieler „bei mir geht es"-Diskussionen.
 
-```bash
-A dig +short kasse
-A dig +short kasse.$NS-lab04
-A dig +short kasse.$NS-lab04.svc
-A dig +search +short kasse
-```
+=== "Bash"
+
+    ```bash
+    A dig +short kasse
+    A dig +short kasse.$NS-lab04
+    A dig +short kasse.$NS-lab04.svc
+    A dig +search +short kasse
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A dig +short kasse
+    A dig +short "kasse.$NS-lab04"
+    A dig +short "kasse.$NS-lab04.svc"
+    A dig +search +short kasse
+    ```
 
 !!! tip "dig und die Suchliste"
     `dig` benutzt die Suchliste nur mit der Option **`+search`**. `curl`
@@ -132,11 +197,19 @@ A dig +search +short kasse
 
 Mitschnitt auf Port 53 beim Aufruf eines **externen** Namens:
 
-```bash
-kubectl -n $NS-lab04 exec a -- sh -c "timeout 5 tcpdump -ni eth0 -l 'udp port 53' > /tmp/q.txt 2>/dev/null & \
-  sleep 1; curl -s -m5 -o /dev/null https://example.com; sleep 1; wait; \
-  grep -cE ' (A|AAAA)\? ' /tmp/q.txt; grep -oE ' (A|AAAA)\? [^ ]+' /tmp/q.txt | sort | uniq -c"
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab04 exec a -- sh -c "timeout 5 tcpdump -ni eth0 -l 'udp port 53' > /tmp/q.txt 2>/dev/null & \
+      sleep 1; curl -s -m5 -o /dev/null https://example.com; sleep 1; wait; \
+      grep -cE ' (A|AAAA)\? ' /tmp/q.txt; grep -oE ' (A|AAAA)\? [^ ]+' /tmp/q.txt | sort | uniq -c"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n "$NS-lab04" exec a -- sh -c "timeout 5 tcpdump -ni eth0 -l 'udp port 53' > /tmp/q.txt 2>/dev/null & sleep 1; curl -s -m5 -o /dev/null https://example.com; sleep 1; wait; grep -cE ' (A|AAAA)\? ' /tmp/q.txt; grep -oE ' (A|AAAA)\? [^ ]+' /tmp/q.txt | sort | uniq -c"
+    ```
 
 **Vorhersage:** `example.com` hat einen Punkt, `ndots` ist 5. Wie viele
 verschiedene Namen werden angefragt? Vergesst nicht, dass zu jedem Namen zwei
@@ -159,10 +232,19 @@ Wiederholt den Mitschnitt mit einem **Punkt am Ende** des Namens
 
 Der Client in `lab04b` will den Service `kasse` in `lab04` erreichen.
 
-```bash
-C curl -s -m3 -o /dev/null -w "kurz: code=%{http_code}\n" http://kasse/
-C curl -s -m3 -o /dev/null -w "qualifiziert: code=%{http_code}\n" http://kasse.$NS-lab04/
-```
+=== "Bash"
+
+    ```bash
+    C curl -s -m3 -o /dev/null -w "kurz: code=%{http_code}\n" http://kasse/
+    C curl -s -m3 -o /dev/null -w "qualifiziert: code=%{http_code}\n" http://kasse.$NS-lab04/
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    C curl -s -m3 -o /dev/null -w "kurz: code=%{http_code}\n" http://kasse/
+    C curl -s -m3 -o /dev/null -w "qualifiziert: code=%{http_code}\n" "http://kasse.$NS-lab04/"
+    ```
 
 **Vorhersage:** Geht der Kurzname? Wenn nein, welcher Fehler, und was liefert
 `C dig +search kasse`?
@@ -182,10 +264,19 @@ C curl -s -m3 -o /dev/null -w "qualifiziert: code=%{http_code}\n" http://kasse.$
 
 Löst im Client `lab04b` einen Namen auf, den es **nirgends** im Cluster gibt:
 
-```bash
-C dig +search +short web
-C curl -sv -m3 http://web/ 2>&1 | grep -E "Trying|refused|resolve"
-```
+=== "Bash"
+
+    ```bash
+    C dig +search +short web
+    C curl -sv -m3 http://web/ 2>&1 | grep -E "Trying|refused|resolve"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    C dig +search +short web
+    C sh -c "curl -sv -m3 http://web/ 2>&1 | grep -E 'Trying|refused|resolve'"
+    ```
 
 **Vorhersage:** Was erwartet ihr? In der ICC zeigte sich zum Zeitpunkt der
 Entstehung dieser Anleitung ein Ergebnis, das nicht „unbekannter Name" lautet.

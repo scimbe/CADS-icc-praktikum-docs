@@ -24,55 +24,114 @@ Nach dem Versuch könnt ihr …
 
 Zwei Pods, einmal auf demselben Knoten und einmal auf verschiedenen.
 
-```bash
-export NS=wab123
-kubectl create ns $NS-lab01
-until kubectl auth can-i create pods -n $NS-lab01 | grep -q yes \
-   && kubectl auth can-i get pods -n $NS-lab01 | grep -q yes; do sleep 1; done
-```
+=== "Bash"
 
-```bash
-kubectl -n $NS-lab01 apply -f - <<'EOF'
-apiVersion: v1
-kind: Pod
-metadata: {name: a, labels: {app: a}}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: nah, labels: {app: nah}}
-spec:
-  affinity:
-    podAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector: {matchLabels: {app: a}}
-        topologyKey: kubernetes.io/hostname
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
----
-apiVersion: v1
-kind: Pod
-metadata: {name: fern, labels: {app: fern}}
-spec:
-  affinity:
-    podAntiAffinity:
-      requiredDuringSchedulingIgnoredDuringExecution:
-      - labelSelector: {matchLabels: {app: a}}
-        topologyKey: kubernetes.io/hostname
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
-EOF
-kubectl -n $NS-lab01 wait --for=condition=Ready pod --all --timeout=180s
-kubectl -n $NS-lab01 get pods -o wide
-```
+    ```bash
+    export NS=wab123
+    kubectl create ns $NS-lab01
+    until kubectl auth can-i create pods -n $NS-lab01 | grep -q yes \
+       && kubectl auth can-i get pods -n $NS-lab01 | grep -q yes; do sleep 1; done
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"
+    kubectl create ns "$NS-lab01"
+    do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab01") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab01") -eq "yes")
+    ```
+
+<!-- Trenner: sonst verschmelzen zwei Tab-Gruppen -->
+
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab01 apply -f - <<'EOF'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a, labels: {app: a}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: nah, labels: {app: nah}}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: a}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: fern, labels: {app: fern}}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: a}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    EOF
+    kubectl -n $NS-lab01 wait --for=condition=Ready pod --all --timeout=180s
+    kubectl -n $NS-lab01 get pods -o wide
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    @'
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a, labels: {app: a}}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: nah, labels: {app: nah}}
+    spec:
+      affinity:
+        podAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: a}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: fern, labels: {app: fern}}
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: a}}
+            topologyKey: kubernetes.io/hostname
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    '@ | kubectl -n $NS-lab01 apply -f -
+    kubectl -n $NS-lab01 wait --for=condition=Ready pod --all --timeout=180s
+    kubectl -n $NS-lab01 get pods -o wide
+    ```
 
 Die Spalte `NODE` zeigt, wo die Pods laufen. `nah` teilt sich den Knoten mit
 `a`, `fern` liegt auf einem anderen.
@@ -136,13 +195,25 @@ danach? Welche MAC-Adresse hat der Router?
 Der Knoten arbeitet als Router. Das erkennt ihr an der TTL: Jeder Router zieht
 eins ab.
 
-```bash
-A_IP=$(kubectl -n $NS-lab01 get pod a -o jsonpath='{.status.podIP}')
-kubectl -n $NS-lab01 exec nah  -- ping -c1 -W2 $A_IP | grep ttl
-kubectl -n $NS-lab01 exec fern -- ping -c1 -W2 $A_IP | grep ttl
-kubectl -n $NS-lab01 exec nah  -- traceroute -n -m6 -w1 $A_IP
-kubectl -n $NS-lab01 exec fern -- traceroute -n -m6 -w1 $A_IP
-```
+=== "Bash"
+
+    ```bash
+    A_IP=$(kubectl -n $NS-lab01 get pod a -o jsonpath='{.status.podIP}')
+    kubectl -n $NS-lab01 exec nah  -- ping -c1 -W2 $A_IP | grep ttl
+    kubectl -n $NS-lab01 exec fern -- ping -c1 -W2 $A_IP | grep ttl
+    kubectl -n $NS-lab01 exec nah  -- traceroute -n -m6 -w1 $A_IP
+    kubectl -n $NS-lab01 exec fern -- traceroute -n -m6 -w1 $A_IP
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $A_IP = kubectl -n $NS-lab01 get pod a -o jsonpath='{.status.podIP}'
+    kubectl -n $NS-lab01 exec nah  -- ping -c1 -W2 $A_IP | Select-String ttl
+    kubectl -n $NS-lab01 exec fern -- ping -c1 -W2 $A_IP | Select-String ttl
+    kubectl -n $NS-lab01 exec nah  -- traceroute -n -m6 -w1 $A_IP
+    kubectl -n $NS-lab01 exec fern -- traceroute -n -m6 -w1 $A_IP
+    ```
 
 **Vorhersage:** Die Standard-TTL ist 64. Wie viele Hops erwartet ihr für `nah`
 und wie viele für `fern`? Wie sieht die Antwort-TTL aus?

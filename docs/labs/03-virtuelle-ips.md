@@ -25,50 +25,98 @@ Nach dem Versuch könnt ihr …
 
 Drei identische Webserver hinter einem Service, dazu ein Client-Pod.
 
-```bash
-export NS=wab123
-kubectl create ns $NS-lab03
-until kubectl auth can-i create pods -n $NS-lab03 | grep -q yes \
-   && kubectl auth can-i get pods -n $NS-lab03 | grep -q yes; do sleep 1; done
+=== "Bash"
 
-kubectl -n $NS-lab03 apply -f - <<'EOF'
-apiVersion: apps/v1
-kind: Deployment
-metadata: {name: web}
-spec:
-  replicas: 3
-  selector: {matchLabels: {app: web}}
-  template:
-    metadata: {labels: {app: web}}
+    ```bash
+    export NS=wab123
+    kubectl create ns $NS-lab03
+    until kubectl auth can-i create pods -n $NS-lab03 | grep -q yes \
+       && kubectl auth can-i get pods -n $NS-lab03 | grep -q yes; do sleep 1; done
+
+    kubectl -n $NS-lab03 apply -f - <<'EOF'
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata: {name: web}
+    spec:
+      replicas: 3
+      selector: {matchLabels: {app: web}}
+      template:
+        metadata: {labels: {app: web}}
+        spec:
+          containers:
+          - name: s
+            image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+            command: ["python3", "/opt/lab/labsrv.py"]
+            env: [{name: NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}]
+            resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata: {name: web}
+    spec:
+      selector: {app: web}
+      ports: [{port: 80, targetPort: 8080}]
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a}
     spec:
       containers:
-      - name: s
+      - name: t
         image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-        command: ["python3", "/opt/lab/labsrv.py"]
-        env: [{name: NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}]
-        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
----
-apiVersion: v1
-kind: Service
-metadata: {name: web}
-spec:
-  selector: {app: web}
-  ports: [{port: 80, targetPort: 8080}]
----
-apiVersion: v1
-kind: Pod
-metadata: {name: a}
-spec:
-  containers:
-  - name: t
-    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
-    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
-EOF
-kubectl -n $NS-lab03 rollout status deploy/web --timeout=180s
-kubectl -n $NS-lab03 wait --for=condition=Ready pod/a --timeout=120s
-export CIP=$(kubectl -n $NS-lab03 get svc web -o jsonpath='{.spec.clusterIP}')
-A() { kubectl -n $NS-lab03 exec a -- "$@"; }
-```
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    EOF
+    kubectl -n $NS-lab03 rollout status deploy/web --timeout=180s
+    kubectl -n $NS-lab03 wait --for=condition=Ready pod/a --timeout=120s
+    export CIP=$(kubectl -n $NS-lab03 get svc web -o jsonpath='{.spec.clusterIP}')
+    A() { kubectl -n $NS-lab03 exec a -- "$@"; }
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $NS = "wab123"
+    kubectl create ns "$NS-lab03"
+    do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab03") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab03") -eq "yes")
+
+    @'
+    apiVersion: apps/v1
+    kind: Deployment
+    metadata: {name: web}
+    spec:
+      replicas: 3
+      selector: {matchLabels: {app: web}}
+      template:
+        metadata: {labels: {app: web}}
+        spec:
+          containers:
+          - name: s
+            image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+            command: ["python3", "/opt/lab/labsrv.py"]
+            env: [{name: NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}]
+            resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+    ---
+    apiVersion: v1
+    kind: Service
+    metadata: {name: web}
+    spec:
+      selector: {app: web}
+      ports: [{port: 80, targetPort: 8080}]
+    ---
+    apiVersion: v1
+    kind: Pod
+    metadata: {name: a}
+    spec:
+      containers:
+      - name: t
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+    '@ | kubectl -n "$NS-lab03" apply -f -
+    kubectl -n $NS-lab03 rollout status deploy/web --timeout=180s
+    kubectl -n $NS-lab03 wait --for=condition=Ready pod/a --timeout=120s
+    $CIP = kubectl -n $NS-lab03 get svc web -o jsonpath='{.spec.clusterIP}'
+    function A { kubectl -n "$NS-lab03" exec a -- @args }
+    ```
 
 ## Aufgabe 1 · Die Adresse, die es nicht gibt
 
@@ -105,9 +153,17 @@ kubectl -n $NS-lab03 get pods -o wide
 
 Ruft den Service achtmal auf und zählt, welcher Pod antwortet:
 
-```bash
-for i in 1 2 3 4 5 6 7 8; do A curl -s -m3 http://$CIP/ | head -1; done | sort | uniq -c
-```
+=== "Bash"
+
+    ```bash
+    for i in 1 2 3 4 5 6 7 8; do A curl -s -m3 http://$CIP/ | head -1; done | sort | uniq -c
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    1..8 | ForEach-Object { A curl -s -m3 http://$CIP/ | Select-Object -First 1 } | Group-Object | ForEach-Object { "{0,7} {1}" -f $_.Count, $_.Name }
+    ```
 
 **Vorhersage:** Gleichmäßig? Der Reihe nach (Round Robin)? Zufällig?
 
@@ -129,21 +185,41 @@ ankommt? Schreibt beide auf, bevor ihr misst.
 
 Mitschnitt im **Client**:
 
-```bash
-kubectl -n $NS-lab03 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' \
-  & sleep 1; curl -s -m3 -o /dev/null http://$CIP/; wait"
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab03 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' \
+      & sleep 1; curl -s -m3 -o /dev/null http://$CIP/; wait"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n $NS-lab03 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' & sleep 1; curl -s -m3 -o /dev/null http://$CIP/; wait"
+    ```
 
 Mitschnitt in einem **Server-Pod** (der erste der Liste). Weil nicht jede Anfrage
 bei ihm landet, schickt ihr zwölf:
 
-```bash
-POD=$(kubectl -n $NS-lab03 get pod -l app=web -o jsonpath='{.items[0].metadata.name}')
-kubectl -n $NS-lab03 exec $POD -- timeout 8 tcpdump -ni eth0 -c4 'tcp port 8080' &
-sleep 2
-for i in 1 2 3 4 5 6 7 8 9 10 11 12; do A curl -s -m3 -o /dev/null http://$CIP/; done
-wait
-```
+=== "Bash"
+
+    ```bash
+    POD=$(kubectl -n $NS-lab03 get pod -l app=web -o jsonpath='{.items[0].metadata.name}')
+    kubectl -n $NS-lab03 exec $POD -- timeout 8 tcpdump -ni eth0 -c4 'tcp port 8080' &
+    sleep 2
+    for i in 1 2 3 4 5 6 7 8 9 10 11 12; do A curl -s -m3 -o /dev/null http://$CIP/; done
+    wait
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    $POD = kubectl -n $NS-lab03 get pod -l app=web -o jsonpath='{.items[0].metadata.name}'
+    $job = Start-Job { param($ns, $pod) kubectl -n $ns exec $pod -- timeout 8 tcpdump -ni eth0 -c4 'tcp port 8080' } -ArgumentList "$NS-lab03", $POD
+    Start-Sleep 2
+    1..12 | ForEach-Object { A curl -s -m3 -o /dev/null http://$CIP/ }
+    Receive-Job $job -Wait -AutoRemoveJob
+    ```
 
 !!! question "Frage 3"
     Welche Adresse und welcher Port stehen im Client-Mitschnitt, welche im
@@ -172,14 +248,25 @@ kubectl -n $NS-lab03 patch svc web -p '{"spec":{"selector":{"app":"web"}}}'
 
 **Fehler B, falscher Zielport:**
 
-```bash
-kubectl -n $NS-lab03 patch svc web --type=json \
-  -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8081}]'
-kubectl -n $NS-lab03 get endpoints web
-A curl -s -m4 -o /dev/null -w "code=%{http_code} time=%{time_total}\n" http://$CIP/
-kubectl -n $NS-lab03 patch svc web --type=json \
-  -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8080}]'
-```
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab03 patch svc web --type=json \
+      -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8081}]'
+    kubectl -n $NS-lab03 get endpoints web
+    A curl -s -m4 -o /dev/null -w "code=%{http_code} time=%{time_total}\n" http://$CIP/
+    kubectl -n $NS-lab03 patch svc web --type=json \
+      -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8080}]'
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n $NS-lab03 patch svc web --type=json -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8081}]'
+    kubectl -n $NS-lab03 get endpoints web
+    A curl -s -m4 -o /dev/null -w "code=%{http_code} time=%{time_total}\n" http://$CIP/
+    kubectl -n $NS-lab03 patch svc web --type=json -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8080}]'
+    ```
 
 **Vorhersage:** Was zeigt `get endpoints` jeweils? Wie schnell kommt der Fehler?
 
