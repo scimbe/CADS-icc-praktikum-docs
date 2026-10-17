@@ -15,7 +15,10 @@
       Git Bash) und **PowerShell** (Windows). Eure Wahl gilt für alle Seiten.
       Die PowerShell-Befehle brauchen **PowerShell 7.4 oder neuer**
       (`winget install Microsoft.PowerShell`, Programm `pwsh`), nicht die
-      blaue Windows PowerShell 5.1. Die `cmd.exe` wird nicht unterstützt.
+      blaue Windows PowerShell 5.1. Öffnet nach der Installation ein **neues
+      Terminal**, startet `pwsh` und prüft mit `$PSVersionTable.PSVersion`,
+      dass die Version 7.4 oder höher ist. Die `cmd.exe` wird nicht
+      unterstützt.
     - **Jeder Versuch bekommt einen eigenen Sub-Namespace** (`$NS-labNN`).
       Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`.
     - **Werkzeug-Image:** `ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0`. Es

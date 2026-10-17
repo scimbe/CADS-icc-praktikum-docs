@@ -208,6 +208,10 @@ die MTU ist. Seht nach, welche Segmentgröße TCP wählt:
     A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
     ```
 
+!!! tip "Kommt nur die Kopfzeile?"
+    Der Messbefehl startet `curl` und fragt nach 50 ms `ss` ab. Ist die
+    Verbindung noch nicht da, erscheint nur die Kopfzeile. Wiederholt den Befehl.
+
 **Vorhersage:** Welche **MSS** erwartet ihr bei einer MTU von 1450 und je 20 Byte IP-
 und TCP-Kopf? In der Ausgabe stehen `mss` und `pmtu`.
 

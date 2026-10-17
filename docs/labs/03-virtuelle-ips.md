@@ -221,6 +221,9 @@ bei ihm landet, schickt ihr zwölf:
     Receive-Job $job -Wait -AutoRemoveJob
     ```
 
+    Rote Zeilen wie `listening on eth0 …` sind normal: `tcpdump` schreibt
+    seine Hinweise auf den Fehlerkanal. Die Pakete folgen darunter.
+
 !!! question "Frage 3"
     Welche Adresse und welcher Port stehen im Client-Mitschnitt, welche im
     Server-Mitschnitt? Wo sitzt die Umsetzung? Welche **Quelladresse** sieht der

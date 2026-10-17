@@ -388,7 +388,7 @@ Skaliert alle Webserver auf null und fragt alle fünf Sekunden den Balancer:
     kubectl -n "$NS-lab07" delete pod spaet
     kubectl -n "$NS-lab07" scale deploy/web --replicas=0
     1..10 | ForEach-Object {
-      $pods = (kubectl -n "$NS-lab07" get pods -l app=web --no-headers | ForEach-Object { ($_ -split '\s+')[2] }) -join ' '
+      $pods = (kubectl -n "$NS-lab07" get pods -l app=web --no-headers 2>$null | ForEach-Object { ($_ -split '\s+')[2] }) -join ' '
       $ep = (kubectl -n "$NS-lab07" get endpoints web --no-headers 2>$null) -split '\s+' | Select-Object -Index 1
       "--- $pods | Endpoints: $ep"
       A curl -si -m4 http://lb/ | Select-String -Pattern '^HTTP/|<h1>' | ForEach-Object { $_.Line }
