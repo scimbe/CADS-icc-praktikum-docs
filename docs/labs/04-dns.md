@@ -281,6 +281,13 @@ Löst im Client `lab04b` einen Namen auf, den es **nirgends** im Cluster gibt:
 **Vorhersage:** Was erwartet ihr? In der ICC zeigte sich zum Zeitpunkt der
 Entstehung dieser Anleitung ein Ergebnis, das nicht „unbekannter Name" lautet.
 
+!!! note "Leere Ausgabe?"
+    Derzeit löst die ICC den kurzen Namen `web` nicht auf: `dig` bleibt leer,
+    `curl` meldet `Could not resolve host`. Beantwortet Frage 5 dann anhand
+    eurer Suchliste aus `/etc/resolv.conf`: Welche vollständigen Namen hat der
+    Resolver nacheinander probiert, und welcher davon hätte zu einer Adresse
+    unter `127.0.0.0/8` führen können?
+
 !!! question "Frage 5"
     Welche Adresse liefert der Name, und warum liegt sie im Bereich
     `127.0.0.0/8`? Welche Anfrage hat die Suchliste dabei erzeugt, und was sagt

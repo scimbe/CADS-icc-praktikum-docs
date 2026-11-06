@@ -255,10 +255,10 @@ an den **Endpoints**.
 **Fehler A, falscher Selector:**
 
 ```bash
-kubectl -n $NS-lab03 patch svc web -p '{"spec":{"selector":{"app":"wbe"}}}'
+kubectl -n $NS-lab03 patch svc web -p 'spec: {selector: {app: wbe}}'
 kubectl -n $NS-lab03 get endpoints web
 A curl -s -m4 -o /dev/null -w "code=%{http_code} time=%{time_total}\n" http://$CIP/
-kubectl -n $NS-lab03 patch svc web -p '{"spec":{"selector":{"app":"web"}}}'
+kubectl -n $NS-lab03 patch svc web -p 'spec: {selector: {app: web}}'
 ```
 
 **Fehler B, falscher Zielport:**
@@ -267,21 +267,26 @@ kubectl -n $NS-lab03 patch svc web -p '{"spec":{"selector":{"app":"web"}}}'
 
     ```bash
     kubectl -n $NS-lab03 patch svc web --type=json \
-      -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8081}]'
+      -p '[{op: replace, path: /spec/ports/0/targetPort, value: 8081}]'
     kubectl -n $NS-lab03 get endpoints web
     A curl -s -m4 -o /dev/null -w "code=%{http_code} time=%{time_total}\n" http://$CIP/
     kubectl -n $NS-lab03 patch svc web --type=json \
-      -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8080}]'
+      -p '[{op: replace, path: /spec/ports/0/targetPort, value: 8080}]'
     ```
 
 === "PowerShell"
 
     ```powershell
-    kubectl -n $NS-lab03 patch svc web --type=json -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8081}]'
+    kubectl -n $NS-lab03 patch svc web --type=json -p '[{op: replace, path: /spec/ports/0/targetPort, value: 8081}]'
     kubectl -n $NS-lab03 get endpoints web
     A curl -s -m4 -o /dev/null -w "code=%{http_code} time=%{time_total}\n" http://$CIP/
-    kubectl -n $NS-lab03 patch svc web --type=json -p '[{"op":"replace","path":"/spec/ports/0/targetPort","value":8080}]'
+    kubectl -n $NS-lab03 patch svc web --type=json -p '[{op: replace, path: /spec/ports/0/targetPort, value: 8080}]'
     ```
+
+Die Patches stehen in YAML-Schreibweise, weil Windows PowerShell 5.1 die
+Anführungszeichen in JSON entfernt. Zeigt `curl` direkt nach dem Patch noch
+`code=200`, wiederholt es nach zwei Sekunden: Die Regeln auf den Knoten folgen
+der Änderung mit kurzer Verzögerung.
 
 **Vorhersage:** Was zeigt `get endpoints` jeweils? Wie schnell kommt der Fehler?
 
