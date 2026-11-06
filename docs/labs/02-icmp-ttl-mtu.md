@@ -198,19 +198,20 @@ die MTU ist. Seht nach, welche Segmentgröße TCP wählt:
 
     ```bash
     A curl -s -m10 -o /dev/null -w "code=%{http_code} bytes=%{size_download}\n" "http://$SRV:8080/big?kb=1024"
-    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    A sh -c "curl -s --limit-rate 1M -o /dev/null 'http://$SRV:8080/big?kb=2000' & sleep 0.5; ss -ti dst $SRV; wait"
     ```
 
 === "PowerShell"
 
     ```powershell
     A curl -s -m10 -o /dev/null -w "code=%{http_code} bytes=%{size_download}\n" "http://${SRV}:8080/big?kb=1024"
-    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    A sh -c "curl -s --limit-rate 1M -o /dev/null 'http://${SRV}:8080/big?kb=2000' & sleep 0.5; ss -ti dst $SRV; wait"
     ```
 
 !!! tip "Kommt nur die Kopfzeile?"
-    Der Messbefehl startet `curl` und fragt nach 50 ms `ss` ab. Ist die
-    Verbindung noch nicht da, erscheint nur die Kopfzeile. Wiederholt den Befehl.
+    Der Messbefehl startet einen gedrosselten `curl` (etwa 2 s Laufzeit) und
+    fragt nach 500 ms `ss` ab. Ist die Verbindung noch nicht da, erscheint nur
+    die Kopfzeile. Wiederholt den Befehl.
 
 **Vorhersage:** Welche **MSS** erwartet ihr bei einer MTU von 1450 und je 20 Byte IP-
 und TCP-Kopf? In der Ausgabe stehen `mss` und `pmtu`.

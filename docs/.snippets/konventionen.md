@@ -17,10 +17,16 @@
       (`winget install Microsoft.PowerShell`, Programm `pwsh`), nicht die
       blaue Windows PowerShell 5.1. Öffnet nach der Installation ein **neues
       Terminal**, startet `pwsh` und prüft mit `$PSVersionTable.PSVersion`,
-      dass die Version 7.4 oder höher ist. Die `cmd.exe` wird nicht
+      dass die Version 7.4 oder höher ist. In 5.1 scheitern einzelne
+      Befehle, etwa die JSON-Daten in Versuch 06. Die `cmd.exe` wird nicht
       unterstützt.
     - **Jeder Versuch bekommt einen eigenen Sub-Namespace** (`$NS-labNN`).
-      Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`.
+      Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`. Ihr dürft
+      **höchstens fünf Namespaces** gleichzeitig haben. Meldet `create ns`
+      `Cannot exceed Namespace quota`, wartet die folgende Schleife endlos:
+      Brecht mit **Strg+C** ab, seht mit `kubectl get ns` nach und löscht
+      alte Lab-Namespaces. Führt ihr den Aufbau ein zweites Mal aus, meldet
+      `kubectl` `AlreadyExists`. Das ist harmlos.
     - **Werkzeug-Image:** `ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0`. Es
       enthält `ping`, `traceroute`, `tcpdump`, `ss`, `iperf3`, `dig`, `curl`
       und den Lehr-Webserver ([Details](/reference/werkzeuge.md)).

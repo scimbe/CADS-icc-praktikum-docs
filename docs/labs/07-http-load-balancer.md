@@ -190,7 +190,8 @@ Drei Webserver (`web`), ein nginx als Balancer (`lb`) und ein Client (`a`).
     - Erscheint beim `apply` ein **`Conflict` auf `resourcequotas`**, hat die
       Plattform gerade die Quote gleichzeitig angepasst. Führt **denselben**
       Befehl noch einmal aus. Prüft mit `kubectl -n $NS-lab07 get all`, ob
-      alles da ist.
+      alles da ist. Die rote Schlusszeile `Forbidden: daemonsets.apps` ist
+      normal: Euch fehlt nur das Leserecht für diese Objektart.
     - Container-Namen wie `n`, `y` oder `no` liest YAML als Wahrheitswert und
       lehnt den Pod ab. Der Container heißt hier deshalb `nginx`.
 
@@ -320,9 +321,9 @@ bereit meldet, und beobachtet zehn Mal, wer antwortet:
         resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
     EOF
     for s in 1 2 3 4 5 6 7 8 9 10; do
-      echo "--- $(kubectl -n $NS-lab07 get pod spaet --no-headers | awk '{print $2}') bereit"
-      kubectl -n $NS-lab07 get endpoints web --no-headers 2>/dev/null
-      for i in $(seq 1 12); do A curl -s http://web/ | head -1; done | grep -c spaet
+      n=$(for i in $(seq 1 12); do A curl -s http://web/ | head -1; done | grep -c spaet)
+      echo "--- $(kubectl -n $NS-lab07 get pod spaet --no-headers | awk '{print $2}') bereit, Treffer fuer spaet: $n"
+      echo "Endpoints: $(kubectl -n $NS-lab07 get endpoints web -o jsonpath='{.subsets[*].addresses[*].ip}' 2>/dev/null)"
       sleep 3
     done
     ```
@@ -344,15 +345,18 @@ bereit meldet, und beobachtet zehn Mal, wer antwortet:
         resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
     '@ | kubectl -n "$NS-lab07" apply -f -
     1..10 | ForEach-Object {
-      "--- $((kubectl -n "$NS-lab07" get pod spaet --no-headers) -split '\s+' | Select-Object -Index 1) bereit"
-      kubectl -n "$NS-lab07" get endpoints web --no-headers 2>$null
-      (1..12 | ForEach-Object { A curl -s http://web/ | Select-Object -First 1 } | Select-String spaet | Measure-Object).Count
+      $n = (1..12 | ForEach-Object { A curl -s http://web/ | Select-Object -First 1 } | Select-String spaet | Measure-Object).Count
+      "--- $((kubectl -n "$NS-lab07" get pod spaet --no-headers) -split '\s+' | Select-Object -Index 1) bereit, Treffer fuer spaet: $n"
+      "Endpoints: $(kubectl -n "$NS-lab07" get endpoints web -o jsonpath='{.subsets[*].addresses[*].ip}' 2>$null)"
       Start-Sleep 3
     }
     ```
 
 **Vorhersage:** Wann taucht `spaet` in der Endpoints-Liste auf, und ab wann
 bekommt er Anfragen?
+
+Jede Zeile zählt erst die Treffer und liest danach den Zustand. So passen
+„bereit“ und „Treffer“ zur selben Runde.
 
 !!! question "Frage 4"
     Wie viele Anfragen hat `spaet` bekommen, solange `0/1 bereit` stand,

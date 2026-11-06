@@ -160,13 +160,13 @@ Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Schaut in eine laufende
 === "Bash"
 
     ```bash
-    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.2; ss -ti dst $SRV; wait"
     ```
 
 === "PowerShell"
 
     ```powershell
-    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.05; ss -ti dst $SRV; wait"
+    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.2; ss -ti dst $SRV; wait"
     ```
 
 **Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
