@@ -183,19 +183,30 @@ Ruft den Service achtmal auf und zählt, welcher Pod antwortet:
 Paket, wenn es den **Client** verlässt, und welche, wenn es im **Server-Pod**
 ankommt? Schreibt beide auf, bevor ihr misst.
 
+`$CIP` und `A` gelten nur in dem Terminal, in dem ihr den Vorbereitungsblock
+ausgeführt habt. Zeigt die erste Zeile `CIP=` ohne Adresse, führt ihn in diesem
+Terminal erneut aus, sonst schneidet `tcpdump` nichts mit.
+
 Mitschnitt im **Client**:
 
 === "Bash"
 
     ```bash
-    kubectl -n $NS-lab03 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' \
-      & sleep 1; curl -s -m3 -o /dev/null http://$CIP/; wait"
+    echo "CIP=$CIP"
+    kubectl -n $NS-lab03 exec a -- sh -c "timeout 6 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' 2>&1" &
+    sleep 2
+    A curl -s -m3 -o /dev/null http://$CIP/
+    wait
     ```
 
 === "PowerShell"
 
     ```powershell
-    kubectl -n $NS-lab03 exec a -- sh -c "timeout 4 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' & sleep 1; curl -s -m3 -o /dev/null http://$CIP/; wait"
+    "CIP=$CIP"
+    $job = Start-Job { param($ns) kubectl -n $ns exec a -- sh -c "timeout 8 tcpdump -ni eth0 -c4 'tcp port 80 or tcp port 8080' 2>&1" } -ArgumentList "$NS-lab03"
+    Start-Sleep 3
+    A curl -s -m3 -o /dev/null http://$CIP/
+    Receive-Job $job -Wait -AutoRemoveJob
     ```
 
 Mitschnitt in einem **Server-Pod** (der erste der Liste). Weil nicht jede Anfrage
@@ -205,7 +216,7 @@ bei ihm landet, schickt ihr zwölf:
 
     ```bash
     POD=$(kubectl -n $NS-lab03 get pod -l app=web -o jsonpath='{.items[0].metadata.name}')
-    kubectl -n $NS-lab03 exec $POD -- timeout 8 tcpdump -ni eth0 -c4 'tcp port 8080' &
+    kubectl -n $NS-lab03 exec $POD -- sh -c "timeout 8 tcpdump -ni eth0 -c4 'tcp port 8080' 2>&1" &
     sleep 2
     for i in 1 2 3 4 5 6 7 8 9 10 11 12; do A curl -s -m3 -o /dev/null http://$CIP/; done
     wait
@@ -215,14 +226,15 @@ bei ihm landet, schickt ihr zwölf:
 
     ```powershell
     $POD = kubectl -n $NS-lab03 get pod -l app=web -o jsonpath='{.items[0].metadata.name}'
-    $job = Start-Job { param($ns, $pod) kubectl -n $ns exec $pod -- timeout 8 tcpdump -ni eth0 -c4 'tcp port 8080' } -ArgumentList "$NS-lab03", $POD
-    Start-Sleep 2
+    $job = Start-Job { param($ns, $pod) kubectl -n $ns exec $pod -- sh -c "timeout 10 tcpdump -ni eth0 -c4 'tcp port 8080' 2>&1" } -ArgumentList "$NS-lab03", $POD
+    Start-Sleep 3
     1..12 | ForEach-Object { A curl -s -m3 -o /dev/null http://$CIP/ }
     Receive-Job $job -Wait -AutoRemoveJob
     ```
 
-    Rote Zeilen wie `listening on eth0 …` sind normal: `tcpdump` schreibt
-    seine Hinweise auf den Fehlerkanal. Die Pakete folgen darunter.
+`tcpdump` schreibt seine Hinweise (`listening on eth0 …`) auf den Fehlerkanal.
+Das angehängte `2>&1` leitet sie in die normale Ausgabe um, damit PowerShell
+sie nicht als roten Fehler meldet. Die Pakete folgen darunter.
 
 !!! question "Frage 3"
     Welche Adresse und welcher Port stehen im Client-Mitschnitt, welche im
