@@ -160,14 +160,19 @@ Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Schaut in eine laufende
 === "Bash"
 
     ```bash
-    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.2; ss -ti dst $SRV; wait"
+    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.1; ss -ti dst $SRV; wait"
     ```
 
 === "PowerShell"
 
     ```powershell
-    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.2; ss -ti dst $SRV; wait"
+    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.1; ss -ti dst $SRV; wait"
     ```
+
+!!! tip "Keine Werte?"
+    Die 20 MB sind in Bruchteilen einer Sekunde übertragen. Erscheint nur die
+    Kopfzeile, eine Zeile `FIN-WAIT-2` ohne Werte oder schon
+    `bytes_received:20480…` (Übertragung fertig), wiederholt den Befehl.
 
 **Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
 (Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
@@ -401,7 +406,7 @@ Spalte erwartet ihr Probleme (`Retr`)?
 
 !!! question "Frage 5"
     Welche Durchsätze und wie viele Wiederholungen (`Retr`) zeigen beide Läufe?
-    Warum treten Wiederholungen **nur** über die Knotengrenze auf? Was folgt
+    Warum treten über die Knotengrenze **deutlich mehr** Wiederholungen auf? Was folgt
     daraus für die Platzierung zweier Dienste, die viel miteinander reden?
 
 ## Aufräumen

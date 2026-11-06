@@ -356,7 +356,8 @@ bereit meldet, und beobachtet zehn Mal, wer antwortet:
 bekommt er Anfragen?
 
 Jede Zeile zählt erst die Treffer und liest danach den Zustand. So passen
-„bereit“ und „Treffer“ zur selben Runde.
+„bereit“ und „Treffer“ zur selben Runde. Eine Runde dauert wegen der zwölf
+Aufrufe etwa 15 bis 20 Sekunden, alle zehn Runden also rund drei Minuten.
 
 !!! question "Frage 4"
     Wie viele Anfragen hat `spaet` bekommen, solange `0/1 bereit` stand,
