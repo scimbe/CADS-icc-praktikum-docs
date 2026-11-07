@@ -19,14 +19,30 @@
       Terminal**, startet `pwsh` und prüft mit `$PSVersionTable.PSVersion`,
       dass die Version 7.4 oder höher ist. In 5.1 scheitern einzelne
       Befehle, etwa die JSON-Daten in Versuch 06. Die `cmd.exe` wird nicht
-      unterstützt.
+      unterstützt. **Git Bash:** Führt in jedem neuen Terminal zuerst
+      `export MSYS2_ARG_CONV_EXCL='*'` aus. Sonst schreibt Git Bash Pfade wie
+      `/etc/resolv.conf` in `C:/Program Files/Git/…` um, bevor sie im Pod
+      ankommen.
     - **Jeder Versuch bekommt einen eigenen Sub-Namespace** (`$NS-labNN`).
-      Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`. Ihr dürft
-      **höchstens fünf Namespaces** gleichzeitig haben. Meldet `create ns`
-      `Cannot exceed Namespace quota`, wartet die folgende Schleife endlos:
+      Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`; das dauert
+      etwa eine Minute ohne Ausgabe, wartet ab. Ihr dürft **höchstens fünf
+      Namespaces** gleichzeitig haben, **euer eigener Namespace zählt mit**.
+      Zählen könnt ihr mit `kubectl get ns -l capsule.clastix.io/tenant=$NS`.
+      Löscht deshalb jeden Lab-Namespace am Ende des Versuchs. Meldet `create ns`
+      `Cannot exceed Namespace quota`, wartet die Schleife im Aufbau in den
+      meisten Versuchen endlos (Versuch 04 bricht mit `Namespace … fehlt` ab):
       Brecht mit **Strg+C** ab, seht mit `kubectl get ns` nach und löscht
       alte Lab-Namespaces. Führt ihr den Aufbau ein zweites Mal aus, meldet
       `kubectl` `AlreadyExists`. Das ist harmlos.
+    - **Meldet `kubectl` `Unable to connect to the server` oder `unexpected EOF`**,
+      war die Verbindung zur ICC kurz gestört. Führt denselben Befehl noch einmal aus.
+    - **`code=` in unseren curl-Ausgaben ist der HTTP-Status** (`000` = keine
+      Antwort). Den **curl-Fehlercode** (6 Name unbekannt, 7 abgelehnt, 28
+      Zeitlimit, 56 Reset) zeigt `exit=` bzw. die Zeile
+      `command terminated with exit code N`.
+    - **Neues Terminal?** Setzt zuerst `KUBECONFIG` und `NS` erneut, dann den
+      Aufbaublock des Versuchs (er definiert `A` und die Adressvariablen).
+      Blöcke ohne Reiter funktionieren in Bash und PowerShell unverändert.
     - **Werkzeug-Image:** `ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0`. Es
       enthält `ping`, `traceroute`, `tcpdump`, `ss`, `iperf3`, `dig`, `curl`
       und den Lehr-Webserver ([Details](/reference/werkzeuge.md)).

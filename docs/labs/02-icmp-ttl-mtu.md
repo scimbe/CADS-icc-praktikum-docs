@@ -42,6 +42,11 @@ Nach dem Versuch könnt ihr …
     kind: Pod
     metadata: {name: srv, labels: {app: srv}}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: a}}
+            topologyKey: kubernetes.io/hostname
       containers:
       - name: s
         image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
@@ -74,6 +79,11 @@ Nach dem Versuch könnt ihr …
     kind: Pod
     metadata: {name: srv, labels: {app: srv}}
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector: {matchLabels: {app: a}}
+            topologyKey: kubernetes.io/hostname
       containers:
       - name: s
         image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
@@ -116,6 +126,9 @@ eigenen Adresse**.
     ```powershell
     1..3 | ForEach-Object { A ping -c1 -W2 -t $_ $SRV }
     ```
+
+`command terminated with exit code 1` heißt nur, dass `ping` keine Antwort
+bekam. In Aufgabe 1 und 2 ist das gewollt.
 
 !!! question "Frage 1"
     Bei welcher TTL erreicht der Ping den Zielpod? Welche Adressen sind die
@@ -209,7 +222,7 @@ die MTU ist. Seht nach, welche Segmentgröße TCP wählt:
     ```
 
 !!! tip "Kommt nur die Kopfzeile?"
-    Der Messbefehl startet einen gedrosselten `curl` (etwa 2 s Laufzeit) und
+    Der Messbefehl startet einen gedrosselten `curl`, der die Verbindung etwa 2 s offen hält, und
     fragt nach 500 ms `ss` ab. Ist die Verbindung noch nicht da, erscheint nur
     die Kopfzeile. Wiederholt den Befehl.
 

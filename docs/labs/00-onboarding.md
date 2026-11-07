@@ -38,6 +38,12 @@ liegt:
     kubectl config get-contexts
     ```
 
+Prüft den genauen Dateinamen im Download-Ordner (z. B. `kubeconfig (1)` oder
+`kubeconfig.yaml`) und passt den Pfad an; die Anführungszeichen schützen
+Leerzeichen und Klammern. `export KUBECONFIG` bzw. `$env:KUBECONFIG` gilt nur
+im aktuellen Terminal: Setzt es in jedem neuen Terminal erneut, bevor ihr einen
+Versuch startet.
+
 !!! info "Euer Namespace"
     In dieser Anleitung heißt euer Namespace **`wab123`**. Bei euch steht an
     dieser Stelle euer eigenes Kürzel. Am einfachsten tragt ihr es oben im Feld
@@ -73,6 +79,11 @@ kubectl describe quota -n $NS
 Lest in der Quota-Ausgabe ab, wie viele **Pods**, **CPU** und **Arbeitsspeicher**
 ihr belegen dürft. Typische Werte für Studierende: 8 CPU-Kerne, 4 GB RAM,
 50 Pods, 10 Services, 5 Volumes.
+
+Seht ihr zwei Quoten, gilt jeweils der **kleinere** Wert. Maßgeblich für Frage 1
+sind die Zeilen `limits.cpu`, `limits.memory` und `pods`, weil jeder Pod seine
+Grenzen (`limits`) voll auf die Quote anrechnet. Zieht ab, was in der Spalte
+`Used` schon belegt ist.
 
 !!! question "Frage 1"
     Ihr braucht pro Experiment zwei bis drei Pods mit je höchstens 200 m CPU und
@@ -157,7 +168,7 @@ Jetzt mit Grenzen:
           limits:   {cpu: 200m, memory: 128Mi}
     EOF
     kubectl -n $NS-lab00 wait --for=condition=Ready pod/tools --timeout=120s
-    kubectl -n $NS-lab00 exec -it tools -- sh -c 'id; ip -br a; ip r'
+    kubectl -n $NS-lab00 exec tools -- sh -c 'id; ip -br a; ip r'
     ```
 
 === "PowerShell"
@@ -177,7 +188,7 @@ Jetzt mit Grenzen:
           limits:   {cpu: 200m, memory: 128Mi}
     '@ | kubectl -n "$NS-lab00" apply -f -
     kubectl -n "$NS-lab00" wait --for=condition=Ready pod/tools --timeout=120s
-    kubectl -n "$NS-lab00" exec -it tools -- sh -c 'id; ip -br a; ip r'
+    kubectl -n "$NS-lab00" exec tools -- sh -c 'id; ip -br a; ip r'
     ```
 
 !!! question "Frage 2"
@@ -192,7 +203,13 @@ Jetzt mit Grenzen:
 
 ```bash
 kubectl delete ns $NS-lab00
+kubectl get ns
 ```
+
+Der erste Befehl kehrt erst zurück, wenn alles gelöscht ist; das dauert etwa
+eine Minute. Wartet ab, statt abzubrechen: Ein Namespace im Zustand
+`Terminating` zählt weiter zur Grenze. `kubectl get ns` zeigt danach, dass er
+verschwunden ist.
 
 Das Löschen eines Namespace räumt alles darin mit weg. Nach jedem Versuch
 macht ihr das. Gespeichert wird in diesem Praktikum nichts, und die ICC sichert

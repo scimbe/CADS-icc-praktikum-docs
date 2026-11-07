@@ -171,14 +171,20 @@ kubectl -n $NS-lab01 exec a -- ip route
 Die Standardroute zeigt auf `169.254.1.1`. Sie liegt im Link-Local-Bereich und
 ist auf jedem Pod gleich. Findet heraus, wer dort antwortet.
 
+**Vorhersage:** Welche Einträge habt ihr in der Nachbartabelle vor dem Ping, welche
+danach? Welche MAC-Adresse hat der Router?
+
 ```bash
 kubectl -n $NS-lab01 exec a -- ip neigh
 kubectl -n $NS-lab01 exec a -- ping -c2 -W2 $(kubectl -n $NS-lab01 get pod nah -o jsonpath='{.status.podIP}')
 kubectl -n $NS-lab01 exec a -- ip neigh
 ```
 
-**Vorhersage:** Welche Einträge habt ihr in der Nachbartabelle vor dem Ping, welche
-danach? Welche MAC-Adresse hat der Router?
+!!! note "Schon vor dem Ping ein Eintrag?"
+    Habt ihr den Block schon einmal ausgeführt, steht `169.254.1.1` bereits vor
+    dem Ping in der Tabelle. Taucht zusätzlich die Adresse eures Knotens
+    (`172.18.…`) mit derselben MAC auf, hat der Knoten selbst euren Pod
+    angesprochen. Auch er antwortet mit `ee:ee:ee:ee:ee:ee`.
 
 !!! question "Frage 2"
     Würde ein anderer Pod auf demselben Knoten dieselbe MAC-Adresse für
@@ -194,6 +200,9 @@ danach? Welche MAC-Adresse hat der Router?
 
 Der Knoten arbeitet als Router. Das erkennt ihr an der TTL: Jeder Router zieht
 eins ab.
+
+**Vorhersage:** Die Standard-TTL ist 64. Wie viele Hops erwartet ihr für `nah`
+und wie viele für `fern`? Wie sieht die Antwort-TTL aus?
 
 === "Bash"
 
@@ -215,9 +224,6 @@ eins ab.
     kubectl -n $NS-lab01 exec fern -- traceroute -n -m6 -w1 $A_IP
     ```
 
-**Vorhersage:** Die Standard-TTL ist 64. Wie viele Hops erwartet ihr für `nah`
-und wie viele für `fern`? Wie sieht die Antwort-TTL aus?
-
 !!! question "Frage 3"
     Wie viele Router liegen zwischen `a` und `nah`, wie viele zwischen `a`
     und `fern`? Welche Zwischenadressen tauchen bei `fern` auf, und
@@ -232,12 +238,17 @@ und wie viele für `fern`? Wie sieht die Antwort-TTL aus?
 Ein Kollege behauptet: „Ich habe `ip addr add 10.233.0.5/24 dev eth0` im Pod
 ausgeführt, und jetzt kann ich ins Pod-Netz routen." Probiert es aus:
 
+**Vorhersage:** Gelingt das? Warum nicht, und welche Rechte fehlen? Was sagt das
+über den Unterschied zu einer virtuellen Maschine bei einem Cloud-Anbieter?
+
 ```bash
 kubectl -n $NS-lab01 exec a -- ip addr add 10.233.0.5/24 dev eth0
 ```
 
-**Vorhersage:** Gelingt das? Warum nicht, und welche Rechte fehlen? Was sagt das
-über den Unterschied zu einer virtuellen Maschine bei einem Cloud-Anbieter?
+??? tip "Prüfstein"
+    `Operation not permitted`: Dem Container fehlt die Fähigkeit
+    `CAP_NET_ADMIN`. `command terminated with exit code 2` ist nur der
+    Rückgabewert von `ip` und kein Fehler in eurem Befehl.
 
 ## Aufräumen
 

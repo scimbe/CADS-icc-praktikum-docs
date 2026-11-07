@@ -154,34 +154,72 @@ Leitung, bevor das erste Byte der Anfrage fließt? Welche TCP-Flags (`S`, `.`, `
     (RTT) oder weil TCP vorsichtig ist (Congestion Window). Das entscheidet, ob
     ihr am Netz oder an der Anwendung sucht.
 
-Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Schaut in eine laufende
-Übertragung hinein:
+Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Die Daten fließen vom
+Server zum Client, also zählt das Fenster des **Servers**. Schaut euch zuerst
+eine frische Verbindung beim Server an. Der Aufruf `/slow?s=3` hält die
+Verbindung drei Sekunden offen, bevor der Server antwortet.
+
+**Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
+(Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
+eine neue Verbindung, und wie groß ist es nach etwa einer Sekunde Übertragung? (Der Wert
+schwankt von Lauf zu Lauf stark.)
 
 === "Bash"
 
     ```bash
-    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.1; ss -ti dst $SRV; wait"
+    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/slow?s=3' >/dev/null 2>&1 &"
+    kubectl -n $NS-lab06 exec srv -- ss -ti sport = :8080
     ```
 
 === "PowerShell"
 
     ```powershell
-    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.1; ss -ti dst $SRV; wait"
+    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/slow?s=3' >/dev/null 2>&1 &"
+    kubectl -n "$NS-lab06" exec srv -- ss -ti sport = :8080
     ```
 
-!!! tip "Keine Werte?"
-    Die 20 MB sind in Bruchteilen einer Sekunde übertragen. Erscheint nur die
-    Kopfzeile, eine Zeile `FIN-WAIT-2` ohne Werte oder schon
-    `bytes_received:20480…` (Übertragung fertig), wiederholt den Befehl.
+Wartet drei Sekunden. Jetzt dieselbe Ansicht **während** einer gebremsten
+Übertragung (20 MB mit 4 MB/s, also etwa 5 s):
 
-**Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
-(Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
-eine neue Verbindung?
+=== "Bash"
+
+    ```bash
+    A sh -c "curl -s --limit-rate 4M -o /dev/null 'http://$SRV:8080/big?kb=20000' >/dev/null 2>&1 &"
+    kubectl -n $NS-lab06 exec srv -- ss -ti sport = :8080
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A sh -c "curl -s --limit-rate 4M -o /dev/null 'http://${SRV}:8080/big?kb=20000' >/dev/null 2>&1 &"
+    kubectl -n "$NS-lab06" exec srv -- ss -ti sport = :8080
+    ```
+
+!!! tip "Was ihr lest"
+    `rtt` ist ein gleitender Mittelwert. Während der gebremsten Übertragung
+    steigt er auf rund 20 ms, weil `curl` absichtlich langsam liest; die
+    Laufzeit der Leitung steht in `minrtt`. `rwnd_limited` zeigt, wie lange
+    das Empfangsfenster des Clients bremste und nicht `cwnd`. Stehen zwei
+    `ESTAB`-Zeilen da, gehört die mit großem `bytes_sent` zur Übertragung.
 
 !!! question "Frage 2"
-    Wie lauten `rtt`, `mss`, `cwnd` und das Verfahren zur Überlastkontrolle? Wie
-    viele Bytes darf der Server ohne Bestätigung maximal senden (`cwnd` mal
-    `mss`)? Warum startet TCP mit so wenig, obwohl das Netz schnell ist?
+    Wie lauten `rtt`, `mss`, `cwnd` und das Verfahren zur Überlastkontrolle bei
+    der frischen Verbindung? Wie viele Bytes darf der Server anfangs ohne
+    Bestätigung senden (`cwnd` mal `mss`)? Wie groß ist `cwnd` während der
+    Übertragung, und warum bremst trotzdem das Empfangsfenster
+    (`rwnd_limited`)? Warum startet TCP mit so wenig, obwohl das Netz schnell
+    ist?
+
+!!! warning "Nur PowerShell 7"
+    Die folgenden Aufrufe schicken JSON an toxiproxy. Windows PowerShell 5.1
+    entfernt dabei die Anführungszeichen. toxiproxy antwortet dann mit
+    `bad request body: invalid character …` oder `proxy not found`, und die
+    Messungen zeigen `code=000 exit=7` (oder, falls der Proxy vorher in `pwsh`
+    angelegt wurde, ohne Störung `code=200`). Das sind
+    **keine** Messergebnisse. Prüft mit `$PSVersionTable.PSVersion`, dass ihr
+    in `pwsh` 7.4+ arbeitet. Habt ihr in 5.1 angefangen, öffnet `pwsh`, setzt
+    `KUBECONFIG` und führt den Aufbaublock erneut aus (`AlreadyExists` und
+    `unchanged` sind harmlos). Beginnt dann Aufgabe 3 von vorn.
 
 ## Aufgabe 3 · Latenz
 
@@ -198,7 +236,7 @@ weiterreicht, und messt die Zeit zunächst ohne Störung:
 
     ```bash
     A curl -s -XPOST http://$GIFT:8474/proxies -d "{\"name\":\"web\",\"listen\":\"0.0.0.0:9000\",\"upstream\":\"$SRV:8080\"}"; echo
-    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
     ```
 
 === "PowerShell"
@@ -206,7 +244,7 @@ weiterreicht, und messt die Zeit zunächst ohne Störung:
     ```powershell
     $body = @{name="web"; listen="0.0.0.0:9000"; upstream="${SRV}:8080"} | ConvertTo-Json -Compress
     A curl -s -XPOST "http://${GIFT}:8474/proxies" -d $body; ""
-    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     ```
 
 Jetzt 300 ms Verzögerung auf der Antwort:
@@ -215,14 +253,14 @@ Jetzt 300 ms Verzögerung auf der Antwort:
 
     ```bash
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; echo
-    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
     ```
 
 === "PowerShell"
 
     ```powershell
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; ""
-    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     ```
 
 **Vorhersage:** Wie viel länger dauert die Anfrage? Wird auch der **Verbindungsaufbau**
@@ -250,17 +288,17 @@ jeweils **curl-Code** und **Zeit**.
 
     # 1) Reset: die Gegenseite bricht die Verbindung ab
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; echo
-    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" http://$GIFT:9000/
     A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/rst
 
     # 2) Bandbreite: 100 KB/s
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; echo
-    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://$GIFT:9000/big?kb=1024"
+    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} exit=%{exitcode} gesamt=%{time_total} Rate=%{speed_download}\n" "http://$GIFT:9000/big?kb=1024"
     A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/bw
 
     # 3) Timeout: nichts kommt zurueck
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; echo
-    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" http://$GIFT:9000/
     A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/to
     ```
 
@@ -271,17 +309,17 @@ jeweils **curl-Code** und **Zeit**.
 
     # 1) Reset: die Gegenseite bricht die Verbindung ab
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; ""
-    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/rst"
 
     # 2) Bandbreite: 100 KB/s
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; ""
-    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://${GIFT}:9000/big?kb=1024"
+    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} exit=%{exitcode} gesamt=%{time_total} Rate=%{speed_download}\n" "http://${GIFT}:9000/big?kb=1024"
     A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/bw"
 
     # 3) Timeout: nichts kommt zurueck
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; ""
-    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/to"
     ```
 

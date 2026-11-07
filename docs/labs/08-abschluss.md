@@ -26,6 +26,10 @@ Die Kursleitung stellt die Datei `lab08.yaml` bereit. Sie enthält die defekten
 Dienste. **Lest sie nicht**, sonst überspringt ihr die Diagnose, und genau die
 ist die Übung.
 
+Speichert sie und wechselt im Terminal in ihren Ordner, z. B. `cd ~/Downloads`
+(Bash) bzw. `cd $HOME\Downloads` (PowerShell). Meldet `apply`
+`the path "lab08.yaml" does not exist`, steht ihr im falschen Ordner.
+
 === "Bash"
 
     ```bash
@@ -58,6 +62,12 @@ ist die Übung.
 Euer Werkzeugkasten: `get pods -o wide`, `get endpoints <name>`, `describe`,
 `logs`, `T curl -v …`, `T getent hosts …`, `get networkpolicy`.
 
+Ändern: `kubectl -n $NS-lab08 edit <art>/<name>` (öffnet unter Windows
+Notepad; speichern und schließen) oder
+`kubectl -n $NS-lab08 get <art>/<name> -o yaml > x.yaml`, bearbeiten,
+`kubectl apply -f x.yaml`. JSON-Patches mit `-p '{…}'` scheitern in Windows
+PowerShell 5.1.
+
 ## Fehlersuche
 
 Pro Fall gilt dasselbe Vorgehen: **Symptom messen, Vermutung aufschreiben,
@@ -72,7 +82,7 @@ Ursache, Beweis.
     Schicht ableiten kann, spart Stunden.
 
 ```bash
-T curl -s -m3 -o /dev/null -w "code=%{http_code} t=%{time_total}\n" http://kasse/
+T curl -s -m3 -o /dev/null -w "code=%{http_code} exit=%{exitcode} t=%{time_total}\n" http://kasse/
 ```
 
 Ziel: `http://kasse/` liefert **200** vom Pod `t` aus. Ihr dürft **das Label von
@@ -93,16 +103,16 @@ Ziel: `http://kasse/` liefert **200** vom Pod `t` aus. Ihr dürft **das Label vo
 
     ```bash
     kubectl -n $NS-lab08 get pods -l app=shop
-    kubectl -n $NS-lab08 get endpoints shop --no-headers 2>/dev/null
-    T curl -s -m3 -o /dev/null -w "code=%{http_code}\n" http://shop/
+    kubectl -n $NS-lab08 get endpoints shop 2>/dev/null
+    T curl -s -m3 -o /dev/null -w "code=%{http_code} exit=%{exitcode}\n" http://shop/
     ```
 
 === "PowerShell"
 
     ```powershell
     kubectl -n "$NS-lab08" get pods -l app=shop
-    kubectl -n "$NS-lab08" get endpoints shop --no-headers 2>$null
-    T curl -s -m3 -o /dev/null -w "code=%{http_code}\n" http://shop/
+    kubectl -n "$NS-lab08" get endpoints shop 2>$null
+    T curl -s -m3 -o /dev/null -w "code=%{http_code} exit=%{exitcode}\n" http://shop/
     ```
 
 Ziel: `http://shop/` liefert **200**. Ihr dürft den `shop` ändern.
@@ -128,7 +138,7 @@ Abrechnung aufruft und warum das scheitert (Fehlercode von `curl`: 6 oder 7?),
 und beschreibt, wie ihr den Fehler im echten Betrieb beheben würdet.
 
 ??? tip "Prüfstein 3"
-    `T getent hosts konto` und `T curl -sv http://konto/ 2>&1 | head`. Aus
+    `T getent hosts konto` und `T sh -c "curl -sv http://konto/ 2>&1 | head"`. Aus
     Versuch 04: Hat die Suchliste eine Chance, einen Dienst zu finden, den es
     nicht gibt?
 
@@ -140,8 +150,8 @@ und beschreibt, wie ihr den Fehler im echten Betrieb beheben würdet.
     schickt das Ticket an das richtige Team.
 
 ```bash
-T curl -s -m6 -o /dev/null -w "Portal: code=%{http_code} t=%{time_total}\n" http://portal/
-T curl -s -m6 -o /dev/null -w "Bericht: code=%{http_code} t=%{time_total}\n" http://bericht/
+T curl -s -m6 -o /dev/null -w "Portal: code=%{http_code} exit=%{exitcode} t=%{time_total}\n" http://portal/
+T curl -s -m6 -o /dev/null -w "Bericht: code=%{http_code} exit=%{exitcode} t=%{time_total}\n" http://bericht/
 ```
 
 Ziel: Stellt fest, **wer** den Fehler erzeugt, und beweist es mit **zwei Zahlen**.
@@ -163,14 +173,14 @@ dafür die ConfigMap `portal-conf` ändern und das Portal neu starten:
 === "Bash"
 
     ```bash
-    kubectl -n $NS-lab08 exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} t=%{time_total}\n" http://lager/
+    kubectl -n $NS-lab08 exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} exit=%{exitcode} t=%{time_total}\n" http://lager/
     kubectl -n $NS-lab08 exec lager-client -- getent hosts lager
     ```
 
 === "PowerShell"
 
     ```powershell
-    kubectl -n "$NS-lab08" exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} t=%{time_total}\n" http://lager/
+    kubectl -n "$NS-lab08" exec lager-client -- curl -s -m4 -o /dev/null -w "code=%{http_code} exit=%{exitcode} t=%{time_total}\n" http://lager/
     kubectl -n "$NS-lab08" exec lager-client -- getent hosts lager
     ```
 
@@ -195,12 +205,18 @@ sonst nichts. Erweitert die vorhandene Regel `lager-aus` minimal.
     **direkt** erreichen darf. Die Regeln zwischen den Schichten sind eure
     Architektur, nicht ein Nachtrag.
 
+!!! warning "Namespace-Grenze"
+    Löscht vorher den Namespace der Fehlersuche: `kubectl delete ns $NS-lab08`
+    (dauert etwa eine Minute). Prüft mit
+    `kubectl get ns -l capsule.clastix.io/tenant=$NS`, dass ihr unter fünf
+    Namespaces bleibt (euer eigener zählt mit).
+
 Entwerft und baut in einem neuen Namespace `$NS-lab08b` diese Anwendung. Alles
 mit denselben Bausteinen wie in den früheren Versuchen:
 
 | Schicht  | Baustein                                  | Darf erreichen          |
 |----------|-------------------------------------------|-------------------------|
-| Frontend | nginx als Balancer (Versuch 07), 1 Pod    | nur `api`               |
+| Frontend | nginx als Balancer (Versuch 07), Deployment mit 1 Replikat | nur `api` |
 | `api`    | Webserver (`labsrv.py`), 2 Replikate      | nur `db`                |
 | `db`     | Webserver (`labsrv.py`), 1 Replikat       | nichts (keine Egress)   |
 
@@ -223,21 +239,24 @@ erwartet **und** was ihr bekommt:
 === "Bash"
 
     ```bash
-    kubectl -n $NS-lab08b exec <client> -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code}\n" http://frontend/
-    kubectl -n $NS-lab08b exec <frontend-pod> -- wget -q -T3 -O /dev/null http://db/; echo "frontend -> db: Exit $?"
-    kubectl -n $NS-lab08b exec <api-pod> -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code}\n" http://db/
+    kubectl -n $NS-lab08b exec kunde -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code} exit=%{exitcode}\n" http://frontend/
+    kubectl -n $NS-lab08b exec deploy/frontend -- wget -q -T3 -O /dev/null http://db/; echo "frontend -> db: Exit $?"
+    kubectl -n $NS-lab08b exec deploy/api -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code} exit=%{exitcode}\n" http://db/
     ```
 
 === "PowerShell"
 
     ```powershell
-    kubectl -n "$NS-lab08b" exec <client> -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code}\n" http://frontend/
-    kubectl -n "$NS-lab08b" exec <frontend-pod> -- wget -q -T3 -O /dev/null http://db/; "frontend -> db: Exit $LASTEXITCODE"
-    kubectl -n "$NS-lab08b" exec <api-pod> -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code}\n" http://db/
+    kubectl -n "$NS-lab08b" exec kunde -- curl -s -m3 -o /dev/null -w "kunde -> frontend: %{http_code} exit=%{exitcode}\n" http://frontend/
+    kubectl -n "$NS-lab08b" exec deploy/frontend -- wget -q -T3 -O /dev/null http://db/; "frontend -> db: Exit $LASTEXITCODE"
+    kubectl -n "$NS-lab08b" exec deploy/api -- curl -s -m3 -o /dev/null -w "api -> db: %{http_code} exit=%{exitcode}\n" http://db/
     ```
 
 Das nginx-Image hat kein `curl`, deshalb `wget`: Exit `0` heißt „Antwort
-bekommen", alles andere „nicht erreicht".
+bekommen", alles andere „nicht erreicht". Heißen eure Objekte anders, passt die
+Namen an. `deploy/<name>` wählt einen Pod des Deployments. Steht vor `Exit 1`
+die Zeile `NotFound`, lief die Messung nicht: Prüft den Namen
+(`kubectl -n $NS-lab08b get deploy,pods`).
 
 !!! question "Frage 2 · Bewertung"
     Wo ist euer Entwurf noch schwach (zum Beispiel: Wer darf `api` direkt
@@ -252,16 +271,18 @@ bekommen", alles andere „nicht erreicht".
 
 ## Aufräumen
 
+`$NS-lab08` habt ihr schon vor dem Entwurf gelöscht. Jetzt bleibt nur der Entwurf:
+
 === "Bash"
 
     ```bash
-    kubectl delete ns $NS-lab08 $NS-lab08b
+    kubectl delete ns $NS-lab08b
     ```
 
 === "PowerShell"
 
     ```powershell
-    kubectl delete ns "$NS-lab08" "$NS-lab08b"
+    kubectl delete ns "$NS-lab08b"
     ```
 
 ## Selbsttest
