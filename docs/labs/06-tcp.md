@@ -214,7 +214,8 @@ Wartet drei Sekunden. Jetzt dieselbe Ansicht **während** einer gebremsten
     Die folgenden Aufrufe schicken JSON an toxiproxy. Windows PowerShell 5.1
     entfernt dabei die Anführungszeichen. toxiproxy antwortet dann mit
     `bad request body: invalid character …` oder `proxy not found`, und die
-    Messungen zeigen `code=000 exit=7` (oder ohne Störung `code=200`). Das sind
+    Messungen zeigen `code=000 exit=7` (oder, falls der Proxy vorher in `pwsh`
+    angelegt wurde, ohne Störung `code=200`). Das sind
     **keine** Messergebnisse. Prüft mit `$PSVersionTable.PSVersion`, dass ihr
     in `pwsh` 7.4+ arbeitet. Habt ihr in 5.1 angefangen, öffnet `pwsh`, setzt
     `KUBECONFIG` und führt den Aufbaublock erneut aus (`AlreadyExists` und

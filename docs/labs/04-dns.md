@@ -328,7 +328,7 @@ kubectl delete ns $NS-lab04
 kubectl delete ns $NS-lab04b
 ```
 
-Jede Zeile wartet etwa eine Minute. Meldet die zweite Zeile `Forbidden`, gab es
+Jede Zeile wartet etwa eine Minute, bis der Namespace weg ist. Meldet die zweite Zeile `Forbidden`, gab es
 `$NS-lab04b` nicht (der Aufbau war abgebrochen). Das ist harmlos.
 
 ## Selbsttest
