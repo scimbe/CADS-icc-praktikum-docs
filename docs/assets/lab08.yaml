@@ -1,0 +1,179 @@
+# Versuch 08: Dienste fuer die Fehlersuche (Namespace <NS>-lab08).
+apiVersion: v1
+kind: Pod
+metadata: {name: t}
+spec:
+  containers:
+  - name: tools
+    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 200m, memory: 128Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: kasse}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: kasse}}
+  template:
+    metadata: {labels: {app: kasse}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        env: [{name: NAME, value: kasse}]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: kasse}
+spec:
+  selector: {app: kasse}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: kasse-ein}
+spec:
+  podSelector: {matchLabels: {app: kasse}}
+  policyTypes: [Ingress]
+  ingress:
+  - from: [{podSelector: {matchLabels: {rolle: kunde}}}]
+    ports: [{port: 8080}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: shop}
+spec:
+  replicas: 2
+  selector: {matchLabels: {app: shop}}
+  template:
+    metadata: {labels: {app: shop}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        env: [{name: NAME, valueFrom: {fieldRef: {fieldPath: metadata.name}}}]
+        readinessProbe: {httpGet: {path: /healthz, port: 8081}, periodSeconds: 3}
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: shop}
+spec:
+  selector: {app: shop}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: abrechnung}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: abrechnung}}
+  template:
+    metadata: {labels: {app: abrechnung}}
+    spec:
+      containers:
+      - name: c
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        env: [{name: KONTO_URL, value: "http://konto/"}]
+        command: ["sh", "-c", "while true; do curl -s -m3 $KONTO_URL || echo fehler; sleep 3; done"]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: bericht}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: bericht}}
+  template:
+    metadata: {labels: {app: bericht}}
+    spec:
+      containers:
+      - name: s
+        image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+        command: ["python3", "/opt/lab/labsrv.py"]
+        env: [{name: NAME, value: bericht}, {name: DELAY, value: "4"}]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: bericht}
+spec:
+  selector: {app: bericht}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: v1
+kind: ConfigMap
+metadata: {name: portal-conf}
+data:
+  default.conf: |
+    server {
+      listen 80;
+      location / {
+        proxy_pass http://bericht;
+        proxy_connect_timeout 1s;
+        proxy_read_timeout 2s;
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata: {name: portal}
+spec:
+  replicas: 1
+  selector: {matchLabels: {app: portal}}
+  template:
+    metadata: {labels: {app: portal}}
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.27-alpine
+        volumeMounts: [{name: conf, mountPath: /etc/nginx/conf.d}]
+        resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+      volumes: [{name: conf, configMap: {name: portal-conf}}]
+---
+apiVersion: v1
+kind: Service
+metadata: {name: portal}
+spec:
+  selector: {app: portal}
+  ports: [{port: 80, targetPort: 80}]
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: lager-client, labels: {rolle: lager}}
+spec:
+  containers:
+  - name: tools
+    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+apiVersion: v1
+kind: Pod
+metadata: {name: lager, labels: {app: lager}}
+spec:
+  containers:
+  - name: s
+    image: ghcr.io/scimbe/cads-icc-praktikum-tools:0.1.0
+    command: ["python3", "/opt/lab/labsrv.py"]
+    env: [{name: NAME, value: lager}]
+    resources: {requests: {cpu: 10m, memory: 32Mi}, limits: {cpu: 100m, memory: 64Mi}}
+---
+apiVersion: v1
+kind: Service
+metadata: {name: lager}
+spec:
+  selector: {app: lager}
+  ports: [{port: 80, targetPort: 8080}]
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata: {name: lager-aus}
+spec:
+  podSelector: {matchLabels: {rolle: lager}}
+  policyTypes: [Egress]
+  egress:
+  - to: [{podSelector: {matchLabels: {app: lager}}}]
+    ports: [{port: 8080}]

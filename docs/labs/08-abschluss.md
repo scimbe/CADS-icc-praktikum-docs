@@ -22,13 +22,10 @@ Nach dem Versuch könnt ihr …
 
 ## Aufbau
 
-Die Kursleitung stellt die Datei `lab08.yaml` bereit. Sie enthält die defekten
-Dienste. **Lest sie nicht**, sonst überspringt ihr die Diagnose, und genau die
-ist die Übung.
-
-Speichert sie und wechselt im Terminal in ihren Ordner, z. B. `cd ~/Downloads`
-(Bash) bzw. `cd $HOME\Downloads` (PowerShell). Meldet `apply`
-`the path "lab08.yaml" does not exist`, steht ihr im falschen Ordner.
+Die defekten Dienste stehen in
+[`lab08.yaml`](../assets/lab08.yaml). `kubectl apply` lädt die Datei direkt
+von dieser Seite, ihr müsst nichts herunterladen. **Lest sie nicht**, sonst
+überspringt ihr die Diagnose, und genau die ist die Übung.
 
 === "Bash"
 
@@ -37,7 +34,7 @@ Speichert sie und wechselt im Terminal in ihren Ordner, z. B. `cd ~/Downloads`
     kubectl create ns $NS-lab08
     until kubectl auth can-i create pods -n $NS-lab08 | grep -q yes \
        && kubectl auth can-i get pods -n $NS-lab08 | grep -q yes; do sleep 1; done
-    kubectl -n $NS-lab08 apply -f lab08.yaml
+    kubectl -n $NS-lab08 apply -f https://scimbe.github.io/CADS-icc-praktikum-docs/assets/lab08.yaml
     sleep 40
     kubectl -n $NS-lab08 get pods
     T() { kubectl -n $NS-lab08 exec t -- "$@"; }
@@ -49,7 +46,7 @@ Speichert sie und wechselt im Terminal in ihren Ordner, z. B. `cd ~/Downloads`
     $NS = "wab123"
     kubectl create ns "$NS-lab08"
     do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-lab08") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-lab08") -eq "yes")
-    kubectl -n "$NS-lab08" apply -f lab08.yaml
+    kubectl -n "$NS-lab08" apply -f https://scimbe.github.io/CADS-icc-praktikum-docs/assets/lab08.yaml
     Start-Sleep 40
     kubectl -n "$NS-lab08" get pods
     function T { kubectl -n "$NS-lab08" exec t -- @args }
