@@ -136,17 +136,17 @@ auf einen Port, auf dem **nichts** lauscht (hier 9999)?
 === "Bash"
 
     ```bash
-    G curl -s -m3 -o /dev/null -w "gut: %{http_code}\n" http://srv/
-    B curl -s -m3 -o /dev/null -w "boese: %{http_code}\n" http://srv/
-    G curl -s -m3 -o /dev/null -w "Port 9999: code=%{http_code} Zeit=%{time_total}\n" http://$SRV:9999/
+    G curl -s -m3 -o /dev/null -w "gut: %{http_code} exit=%{exitcode}\n" http://srv/
+    B curl -s -m3 -o /dev/null -w "boese: %{http_code} exit=%{exitcode}\n" http://srv/
+    G curl -s -m3 -o /dev/null -w "Port 9999: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://$SRV:9999/
     ```
 
 === "PowerShell"
 
     ```powershell
-    G curl -s -m3 -o /dev/null -w "gut: %{http_code}\n" http://srv/
-    B curl -s -m3 -o /dev/null -w "boese: %{http_code}\n" http://srv/
-    G curl -s -m3 -o /dev/null -w "Port 9999: code=%{http_code} Zeit=%{time_total}\n" "http://${SRV}:9999/"
+    G curl -s -m3 -o /dev/null -w "gut: %{http_code} exit=%{exitcode}\n" http://srv/
+    B curl -s -m3 -o /dev/null -w "boese: %{http_code} exit=%{exitcode}\n" http://srv/
+    G curl -s -m3 -o /dev/null -w "Port 9999: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" "http://${SRV}:9999/"
     ```
 
 !!! question "Frage 1"
@@ -175,8 +175,8 @@ auf einen Port, auf dem **nichts** lauscht (hier 9999)?
         ports: [{port: 8080}]
     EOF
     sleep 4
-    G curl -s -m3 -o /dev/null -w "gut: %{http_code} Zeit=%{time_total}\n" http://srv/
-    B curl -s -m3 -o /dev/null -w "boese: %{http_code} Zeit=%{time_total}\n" http://srv/
+    G curl -s -m3 -o /dev/null -w "gut: %{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
+    B curl -s -m3 -o /dev/null -w "boese: %{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
     ```
 
 === "PowerShell"
@@ -194,14 +194,14 @@ auf einen Port, auf dem **nichts** lauscht (hier 9999)?
         ports: [{port: 8080}]
     '@ | kubectl -n "$NS-lab05" apply -f -
     Start-Sleep 4
-    G curl -s -m3 -o /dev/null -w "gut: %{http_code} Zeit=%{time_total}\n" http://srv/
-    B curl -s -m3 -o /dev/null -w "boese: %{http_code} Zeit=%{time_total}\n" http://srv/
+    G curl -s -m3 -o /dev/null -w "gut: %{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
+    B curl -s -m3 -o /dev/null -w "boese: %{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
     ```
 
 **Vorhersage:** Was sieht `boese`, eine Absage oder Stille? Wie lang dauert es?
 
 !!! question "Frage 2"
-    Welchen curl-Code liefert `boese` (28 = Zeitüberschreitung, 7 = abgelehnt)?
+    Welchen curl-Code (`exit=`) liefert `boese` (28 = Zeitüberschreitung, 7 = abgelehnt)?
     Was erfährt ein Angreifer aus dieser Stille, und was aus einer Absage?
 
 ## Aufgabe 3 · Stille oder Absage?
@@ -216,16 +216,16 @@ Wiederholt die Messung auf dem geschlossenen Port, jetzt **mit** Regel:
 === "Bash"
 
     ```bash
-    G curl -s -m3 -o /dev/null -w "gut, Port 9999: code=%{http_code} Zeit=%{time_total}\n" http://$SRV:9999/
-    B curl -s -m3 -o /dev/null -w "boese, Port 9999: code=%{http_code} Zeit=%{time_total}\n" http://$SRV:9999/
+    G curl -s -m3 -o /dev/null -w "gut, Port 9999: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://$SRV:9999/
+    B curl -s -m3 -o /dev/null -w "boese, Port 9999: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://$SRV:9999/
     G ping -c1 -W2 $SRV
     ```
 
 === "PowerShell"
 
     ```powershell
-    G curl -s -m3 -o /dev/null -w "gut, Port 9999: code=%{http_code} Zeit=%{time_total}\n" "http://${SRV}:9999/"
-    B curl -s -m3 -o /dev/null -w "boese, Port 9999: code=%{http_code} Zeit=%{time_total}\n" "http://${SRV}:9999/"
+    G curl -s -m3 -o /dev/null -w "gut, Port 9999: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" "http://${SRV}:9999/"
+    B curl -s -m3 -o /dev/null -w "boese, Port 9999: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" "http://${SRV}:9999/"
     G ping -c1 -W2 $SRV
     ```
 
@@ -233,6 +233,8 @@ Wiederholt die Messung auf dem geschlossenen Port, jetzt **mit** Regel:
     Warum antwortet der Port 9999 jetzt nicht mehr sofort mit „abgelehnt", selbst
     für den erlaubten Client? Warum schlägt auch der **Ping** des guten Clients
     fehl, obwohl er HTTP darf? Was müsstet ihr erlauben, damit er klappt?
+    (Tipp: NetworkPolicy kennt nur TCP, UDP und SCTP. Wie erlaubt ihr *alle*
+    Protokolle von `gut`?)
 
 ## Aufgabe 4 · Egress sperren, DNS vergessen
 
@@ -242,53 +244,7 @@ Wiederholt die Messung auf dem geschlossenen Port, jetzt **mit** Regel:
     mit unklaren Meldungen scheitert.
 
 Der gute Client soll nur noch mit dem Server sprechen dürfen. Zuerst die
-ungeschickte Variante: alles verbieten, außer DNS.
-
-=== "Bash"
-
-    ```bash
-    kubectl -n $NS-lab05 apply -f - <<'EOF'
-    apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata: {name: egress-zu}
-    spec:
-      podSelector: {matchLabels: {rolle: gut}}
-      policyTypes: [Egress]
-      egress:
-      - to: [{namespaceSelector: {}}]
-        ports:
-        - {port: 53, protocol: UDP}
-        - {port: 53, protocol: TCP}
-    EOF
-    sleep 4
-    G getent hosts srv
-    G curl -s -m4 -o /dev/null -w "per Name: code=%{http_code} Zeit=%{time_total}\n" http://srv/
-    ```
-
-=== "PowerShell"
-
-    ```powershell
-    @'
-    apiVersion: networking.k8s.io/v1
-    kind: NetworkPolicy
-    metadata: {name: egress-zu}
-    spec:
-      podSelector: {matchLabels: {rolle: gut}}
-      policyTypes: [Egress]
-      egress:
-      - to: [{namespaceSelector: {}}]
-        ports:
-        - {port: 53, protocol: UDP}
-        - {port: 53, protocol: TCP}
-    '@ | kubectl -n "$NS-lab05" apply -f -
-    Start-Sleep 4
-    G getent hosts srv
-    G curl -s -m4 -o /dev/null -w "per Name: code=%{http_code} Zeit=%{time_total}\n" http://srv/
-    ```
-
-**Vorhersage:** Wird der Name aufgelöst? Kommt die HTTP-Anfrage durch?
-
-Nun die Freigabe zum Server:
+ungeschickte Variante: nur die Freigabe zum Server, sonst nichts.
 
 === "Bash"
 
@@ -305,8 +261,9 @@ Nun die Freigabe zum Server:
         ports: [{port: 8080}]
     EOF
     sleep 4
-    G curl -s -m4 -o /dev/null -w "Server: code=%{http_code} Zeit=%{time_total}\n" http://srv/
-    G curl -s -m4 -o /dev/null -w "Internet: code=%{http_code} Zeit=%{time_total}\n" https://example.com
+    G getent hosts srv
+    G curl -s -m4 -o /dev/null -w "per Name: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
+    G curl -s -m4 -o /dev/null -w "per IP: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://$SRV:8080/
     ```
 
 === "PowerShell"
@@ -324,14 +281,60 @@ Nun die Freigabe zum Server:
         ports: [{port: 8080}]
     '@ | kubectl -n "$NS-lab05" apply -f -
     Start-Sleep 4
-    G curl -s -m4 -o /dev/null -w "Server: code=%{http_code} Zeit=%{time_total}\n" http://srv/
-    G curl -s -m4 -o /dev/null -w "Internet: code=%{http_code} Zeit=%{time_total}\n" https://example.com
+    G getent hosts srv
+    G curl -s -m4 -o /dev/null -w "per Name: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
+    G curl -s -m4 -o /dev/null -w "per IP: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" "http://${SRV}:8080/"
+    ```
+
+**Vorhersage:** Wird der Name aufgelöst? Kommt die HTTP-Anfrage per Name durch, per IP?
+
+Nun die Freigabe für DNS, als eigene Regel daneben:
+
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab05 apply -f - <<'EOF'
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata: {name: dns-erlauben}
+    spec:
+      podSelector: {matchLabels: {rolle: gut}}
+      policyTypes: [Egress]
+      egress:
+      - to: [{namespaceSelector: {}}]
+        ports:
+        - {port: 53, protocol: UDP}
+        - {port: 53, protocol: TCP}
+    EOF
+    sleep 4
+    G curl -s -m4 -o /dev/null -w "Server: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
+    G curl -s -m4 -o /dev/null -w "Internet: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" https://example.com
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    @'
+    apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata: {name: dns-erlauben}
+    spec:
+      podSelector: {matchLabels: {rolle: gut}}
+      policyTypes: [Egress]
+      egress:
+      - to: [{namespaceSelector: {}}]
+        ports:
+        - {port: 53, protocol: UDP}
+        - {port: 53, protocol: TCP}
+    '@ | kubectl -n "$NS-lab05" apply -f -
+    Start-Sleep 4
+    G curl -s -m4 -o /dev/null -w "Server: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" http://srv/
+    G curl -s -m4 -o /dev/null -w "Internet: code=%{http_code} exit=%{exitcode} Zeit=%{time_total}\n" https://example.com
     ```
 
 !!! question "Frage 4"
-    Welche der beiden Anfragen ist bei der ersten Regel am DNS gescheitert, und
-    welche an der fehlenden Freigabe des Ziels? Woran seht ihr den Unterschied?
-    Warum steht im zweiten Aufruf der Port 8080 und nicht 80?
+    Warum scheitert der Aufruf per Name, aber nicht per IP? Woran seht ihr, dass
+    DNS fehlt (`getent`, Zeit)? Warum steht in der Regel Port 8080 und nicht 80?
 
 ## Aufgabe 5 · Wer bin ich im Internet?
 
@@ -345,7 +348,7 @@ Räumt die Egress-Regeln weg und fragt einen Echo-Dienst nach eurer Adresse:
 === "Bash"
 
     ```bash
-    kubectl -n $NS-lab05 delete networkpolicy egress-zu egress-srv
+    kubectl -n $NS-lab05 delete networkpolicy dns-erlauben egress-srv
     sleep 4
     G curl -s -m5 https://ifconfig.me; echo
     kubectl -n $NS-lab05 get pod gut -o jsonpath='{.status.podIP}'; echo
@@ -355,7 +358,7 @@ Räumt die Egress-Regeln weg und fragt einen Echo-Dienst nach eurer Adresse:
 === "PowerShell"
 
     ```powershell
-    kubectl -n "$NS-lab05" delete networkpolicy egress-zu egress-srv
+    kubectl -n "$NS-lab05" delete networkpolicy dns-erlauben egress-srv
     Start-Sleep 4
     G curl -s -m5 https://ifconfig.me; ""
     kubectl -n "$NS-lab05" get pod gut -o jsonpath='{.status.podIP}'; ""

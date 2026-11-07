@@ -209,6 +209,13 @@ Wartet drei Sekunden. Jetzt dieselbe Ansicht **während** einer gebremsten
     (`rwnd_limited`)? Warum startet TCP mit so wenig, obwohl das Netz schnell
     ist?
 
+!!! warning "Nur PowerShell 7"
+    Die folgenden Aufrufe schicken JSON an toxiproxy. Windows PowerShell 5.1
+    entfernt dabei die Anführungszeichen, toxiproxy antwortet dann mit
+    `bad request body: invalid character …`, und alle Messungen in Aufgabe 3
+    und 4 laufen ohne Störung. Prüft mit `$PSVersionTable.PSVersion`, dass ihr
+    in `pwsh` 7.4+ arbeitet.
+
 ## Aufgabe 3 · Latenz
 
 !!! abstract "Warum das zählt"
@@ -276,17 +283,17 @@ jeweils **curl-Code** und **Zeit**.
 
     # 1) Reset: die Gegenseite bricht die Verbindung ab
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; echo
-    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" http://$GIFT:9000/
     A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/rst
 
     # 2) Bandbreite: 100 KB/s
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; echo
-    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://$GIFT:9000/big?kb=1024"
+    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} exit=%{exitcode} gesamt=%{time_total} Rate=%{speed_download}\n" "http://$GIFT:9000/big?kb=1024"
     A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/bw
 
     # 3) Timeout: nichts kommt zurueck
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; echo
-    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" http://$GIFT:9000/
     A curl -s -XDELETE http://$GIFT:8474/proxies/web/toxics/to
     ```
 
@@ -297,17 +304,17 @@ jeweils **curl-Code** und **Zeit**.
 
     # 1) Reset: die Gegenseite bricht die Verbindung ab
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"rst","type":"reset_peer","attributes":{"timeout":0}}'; ""
-    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -m5 -o /dev/null -w "Reset: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/rst"
 
     # 2) Bandbreite: 100 KB/s
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"bw","type":"bandwidth","attributes":{"rate":100}}'; ""
-    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} gesamt=%{time_total} Rate=%{speed_download}\n" "http://${GIFT}:9000/big?kb=1024"
+    A curl -s -m15 -o /dev/null -w "Langsam: code=%{http_code} exit=%{exitcode} gesamt=%{time_total} Rate=%{speed_download}\n" "http://${GIFT}:9000/big?kb=1024"
     A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/bw"
 
     # 3) Timeout: nichts kommt zurueck
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"to","type":"timeout","attributes":{"timeout":0}}'; ""
-    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -m4 -o /dev/null -w "Timeout: code=%{http_code} exit=%{exitcode} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     A curl -s -XDELETE "http://${GIFT}:8474/proxies/web/toxics/to"
     ```
 

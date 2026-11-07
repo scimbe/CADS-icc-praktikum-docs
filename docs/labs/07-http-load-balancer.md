@@ -417,6 +417,13 @@ kubectl -n $NS-lab07 rollout status deploy/web --timeout=120s
     welcher Körper folgt danach, und wer sendet ihn jetzt? Warum ist das Verhalten
     bei Deployments **gewollt**?
 
+??? tip "Prüfstein"
+    `Endpoints` listet nur **bereite** Ziele. Gibt es keine mehr, schickt
+    Kubernetes neue Verbindungen an Pods, die noch auf `Terminating` stehen,
+    aber antworten. Sie verschwinden nach der Gnadenfrist
+    (`terminationGracePeriodSeconds`, Standard 30 s). Danach lehnt der
+    Service ab, und nginx meldet **502**, nicht 503.
+
 ## Aufgabe 6 · Von außen hinein
 
 !!! abstract "Warum das zählt"

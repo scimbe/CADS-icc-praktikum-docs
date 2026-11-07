@@ -29,6 +29,12 @@
       Brecht mit **Strg+C** ab, seht mit `kubectl get ns` nach und löscht
       alte Lab-Namespaces. Führt ihr den Aufbau ein zweites Mal aus, meldet
       `kubectl` `AlreadyExists`. Das ist harmlos.
+    - **Meldet `kubectl` `Unable to connect to the server` oder `unexpected EOF`**,
+      war die Verbindung zur ICC kurz gestört. Führt denselben Befehl noch einmal aus.
+    - **`code=` in unseren curl-Ausgaben ist der HTTP-Status** (`000` = keine
+      Antwort). Den **curl-Fehlercode** (6 Name unbekannt, 7 abgelehnt, 28
+      Zeitlimit, 56 Reset) zeigt `exit=` bzw. die Zeile
+      `command terminated with exit code N`.
     - **Neues Terminal?** Setzt zuerst `KUBECONFIG` und `NS` erneut, dann den
       Aufbaublock des Versuchs (er definiert `A` und die Adressvariablen).
       Blöcke ohne Reiter funktionieren in Bash und PowerShell unverändert.
