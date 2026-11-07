@@ -23,7 +23,7 @@
     - **Jeder Versuch bekommt einen eigenen Sub-Namespace** (`$NS-labNN`).
       Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`; das dauert
       etwa eine Minute ohne Ausgabe, wartet ab. Ihr dürft **höchstens fünf
-      Namespaces** gleichzeitig haben, **euer eigener Namespace zählt mit**.
+      Namespaces** gleichzeitig haben, rechnet euren eigenen Namespace vorsichtshalber mit.
       Löscht deshalb jeden Lab-Namespace am Ende des Versuchs. Meldet `create ns`
       `Cannot exceed Namespace quota`, wartet die folgende Schleife endlos:
       Brecht mit **Strg+C** ab, seht mit `kubectl get ns` nach und löscht

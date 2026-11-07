@@ -27,7 +27,7 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
 !!! warning "Zwei Namespaces"
     Dieser Versuch legt **zwei** Namespaces an (`$NS-lab04` und `$NS-lab04b`).
     Prüft vorher mit `kubectl get ns`, dass höchstens drei Namespaces belegt
-    sind (euer eigener zählt mit), und löscht alte Lab-Namespaces. Meldet der
+    sind (rechnet euren eigenen vorsichtshalber mit), und löscht alte Lab-Namespaces. Meldet der
     Aufbau `Namespace … fehlt`, war die Grenze erreicht: Räumt auf und startet
     ihn neu.
 
@@ -37,7 +37,7 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     export NS=wab123
     for n in lab04 lab04b; do
       kubectl create ns $NS-$n
-      kubectl get ns $NS-$n >/dev/null || { echo "Namespace $NS-$n fehlt (Grenze?)"; break; }
+      kubectl get ns $NS-$n >/dev/null || { echo "Namespace $NS-$n fehlt (Grenze?). Prüft kubectl get ns, löscht alte Lab-Namespaces und startet den Aufbau neu."; break; }
       until kubectl auth can-i create pods -n $NS-$n | grep -q yes \
          && kubectl auth can-i get pods -n $NS-$n | grep -q yes; do sleep 1; done
     done
@@ -91,7 +91,7 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     $NS = "wab123"
     foreach ($n in "lab04", "lab04b") {
       kubectl create ns "$NS-$n"
-      if (-not (kubectl get ns "$NS-$n" -o name 2>$null)) { "Namespace $NS-$n fehlt (Grenze?)"; break }
+      if (-not (kubectl get ns "$NS-$n" -o name 2>$null)) { "Namespace $NS-$n fehlt (Grenze?). Prüft kubectl get ns, löscht alte Lab-Namespaces und startet den Aufbau neu."; break }
       do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-$n") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-$n") -eq "yes")
     }
 

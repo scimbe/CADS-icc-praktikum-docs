@@ -155,9 +155,30 @@ Leitung, bevor das erste Byte der Anfrage fließt? Welche TCP-Flags (`S`, `.`, `
     ihr am Netz oder an der Anwendung sucht.
 
 Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Die Daten fließen vom
-Server zum Client, also zählt das Fenster des **Servers**. Der Client lädt
-gedrosselt im Hintergrund (etwa 5 s), währenddessen schaut ihr im Server-Pod
-`srv` in die laufende Verbindung hinein:
+Server zum Client, also zählt das Fenster des **Servers**. Schaut euch zuerst
+eine frische Verbindung beim Server an. Der Aufruf `/slow?s=3` hält die
+Verbindung drei Sekunden offen, bevor der Server antwortet.
+
+**Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
+(Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
+eine neue Verbindung, und wie groß ist es nach einigen Sekunden Übertragung?
+
+=== "Bash"
+
+    ```bash
+    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/slow?s=3' >/dev/null 2>&1 &"
+    kubectl -n $NS-lab06 exec srv -- ss -ti sport = :8080
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/slow?s=3' >/dev/null 2>&1 &"
+    kubectl -n "$NS-lab06" exec srv -- ss -ti sport = :8080
+    ```
+
+Wartet drei Sekunden. Jetzt dieselbe Ansicht **während** einer gebremsten
+Übertragung (20 MB mit 4 MB/s, also etwa 5 s):
 
 === "Bash"
 
@@ -173,20 +194,20 @@ gedrosselt im Hintergrund (etwa 5 s), währenddessen schaut ihr im Server-Pod
     kubectl -n "$NS-lab06" exec srv -- ss -ti sport = :8080
     ```
 
-!!! tip "Keine Werte?"
-    Erscheint nur die Kopfzeile, lief der Download noch nicht oder schon nicht
-    mehr. Führt beide Zeilen direkt hintereinander noch einmal aus.
-
-**Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
-(Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
-eine neue Verbindung, und wie groß ist es nach einigen Sekunden Übertragung?
+!!! tip "Was ihr lest"
+    `rtt` ist ein gleitender Mittelwert. Während der gebremsten Übertragung
+    steigt er auf rund 20 ms, weil `curl` absichtlich langsam liest; die
+    Laufzeit der Leitung steht in `minrtt`. `rwnd_limited` zeigt, wie lange
+    das Empfangsfenster des Clients bremste und nicht `cwnd`. Stehen zwei
+    `ESTAB`-Zeilen da, gehört die mit großem `bytes_sent` zur Übertragung.
 
 !!! question "Frage 2"
-    Wie lauten auf der Serverseite `rtt`, `mss`, `cwnd` und das Verfahren zur
-    Überlastkontrolle? Wie viele Bytes darf der Server gerade ohne Bestätigung
-    senden (`cwnd` mal `mss`), und wie viel ist das gegenüber dem Startwert
-    von 10 Segmenten (RFC 6928)? Warum startet TCP so klein, obwohl das Netz
-    schnell ist?
+    Wie lauten `rtt`, `mss`, `cwnd` und das Verfahren zur Überlastkontrolle bei
+    der frischen Verbindung? Wie viele Bytes darf der Server anfangs ohne
+    Bestätigung senden (`cwnd` mal `mss`)? Wie groß ist `cwnd` während der
+    Übertragung, und warum bremst trotzdem das Empfangsfenster
+    (`rwnd_limited`)? Warum startet TCP mit so wenig, obwohl das Netz schnell
+    ist?
 
 ## Aufgabe 3 · Latenz
 
