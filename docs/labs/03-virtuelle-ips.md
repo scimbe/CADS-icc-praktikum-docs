@@ -142,7 +142,9 @@ kubectl -n $NS-lab03 get pods -o wide
 ??? tip "Prüfstein"
     Der Knoten kennt eine Regel „TCP-Pakete an `$CIP:80` gehen an einen der
     Endpoints auf Port 8080". Für ICMP gibt es keine Regel, und es gibt auch
-    keinen Pod, der die Adresse als seine eigene trägt.
+    keinen Pod, der die Adresse als seine eigene trägt. Deshalb antwortet euer
+    **Knoten** selbst mit `Destination Port Unreachable`: Er kennt die Adresse,
+    hat für ICMP aber kein Ziel.
 
 ## Aufgabe 2 · Verteilung
 
@@ -162,10 +164,18 @@ Ruft den Service achtmal auf und zählt, welcher Pod antwortet:
 === "PowerShell"
 
     ```powershell
-    1..8 | ForEach-Object { A curl -s -m3 http://$CIP/ | Select-Object -First 1 } | Group-Object | ForEach-Object { "{0,7} {1}" -f $_.Count, $_.Name }
+    1..8 | ForEach-Object { A curl -s -m3 http://$CIP/ | Select-Object -First 1 } | Sort-Object | Group-Object | ForEach-Object { "{0,7} {1}" -f $_.Count, $_.Name }
     ```
 
-**Vorhersage:** Gleichmäßig? Der Reihe nach (Round Robin)? Zufällig?
+Zum Vergleich holt **ein** `curl` die Seite viermal über **eine** Verbindung.
+Achtet auf die Zeilen `hello from …`:
+
+```bash
+A curl -s -m3 http://$CIP/ http://$CIP/ http://$CIP/ http://$CIP/
+```
+
+**Vorhersage:** Gleichmäßig? Der Reihe nach (Round Robin)? Zufällig? Und bei
+der einen Verbindung?
 
 !!! question "Frage 2"
     Wie verteilen sich die Antworten? Ändert sich die Verteilung bei einer
@@ -232,6 +242,10 @@ bei ihm landet, schickt ihr zwölf:
     Receive-Job $job -Wait -AutoRemoveJob
     ```
 
+Der Block braucht etwa 15 s. Seht ihr nur `listening on eth0` und
+`0 packets captured`, hat zufällig kein Aufruf diesen Pod getroffen:
+Wiederholt ihn.
+
 `tcpdump` schreibt seine Hinweise (`listening on eth0 …`) auf den Fehlerkanal.
 Das angehängte `2>&1` leitet sie in die normale Ausgabe um, damit PowerShell
 sie nicht als roten Fehler meldet. Die Pakete folgen darunter.
@@ -249,8 +263,10 @@ sie nicht als roten Fehler meldet. Die Pakete folgen darunter.
     Der Tippfehler im Label fällt erst auf, wenn Verkehr ankommt. Der Blick auf
     die Endpoints entscheidet, ob ihr in Minuten oder in Stunden fertig seid.
 
-Beide Fehler führen zu „Connection refused" (curl-Code 7). Ihr erkennt sie nur
-an den **Endpoints**.
+Beide Fehler führen zu „Connection refused": `curl` zeigt `code=000` (keine
+HTTP-Antwort), und `kubectl` meldet darunter `command terminated with exit
+code 7` (curl-Code 7). Ihr erkennt die Fehler nur an den **Endpoints**. Die
+Warnung `v1 Endpoints is deprecated` könnt ihr ignorieren.
 
 **Fehler A, falscher Selector:**
 

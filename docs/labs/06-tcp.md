@@ -154,34 +154,39 @@ Leitung, bevor das erste Byte der Anfrage fließt? Welche TCP-Flags (`S`, `.`, `
     (RTT) oder weil TCP vorsichtig ist (Congestion Window). Das entscheidet, ob
     ihr am Netz oder an der Anwendung sucht.
 
-Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Schaut in eine laufende
-Übertragung hinein:
+Eine Verbindung braucht Zeit, um ihr Fenster zu öffnen. Die Daten fließen vom
+Server zum Client, also zählt das Fenster des **Servers**. Der Client lädt
+gedrosselt im Hintergrund (etwa 5 s), währenddessen schaut ihr im Server-Pod
+`srv` in die laufende Verbindung hinein:
 
 === "Bash"
 
     ```bash
-    A sh -c "curl -s -o /dev/null 'http://$SRV:8080/big?kb=20000' & sleep 0.1; ss -ti dst $SRV; wait"
+    A sh -c "curl -s --limit-rate 4M -o /dev/null 'http://$SRV:8080/big?kb=20000' >/dev/null 2>&1 &"
+    kubectl -n $NS-lab06 exec srv -- ss -ti sport = :8080
     ```
 
 === "PowerShell"
 
     ```powershell
-    A sh -c "curl -s -o /dev/null 'http://${SRV}:8080/big?kb=20000' & sleep 0.1; ss -ti dst $SRV; wait"
+    A sh -c "curl -s --limit-rate 4M -o /dev/null 'http://${SRV}:8080/big?kb=20000' >/dev/null 2>&1 &"
+    kubectl -n "$NS-lab06" exec srv -- ss -ti sport = :8080
     ```
 
 !!! tip "Keine Werte?"
-    Die 20 MB sind in Bruchteilen einer Sekunde übertragen. Erscheint nur die
-    Kopfzeile, eine Zeile `FIN-WAIT-2` ohne Werte oder schon
-    `bytes_received:20480…` (Übertragung fertig), wiederholt den Befehl.
+    Erscheint nur die Kopfzeile, lief der Download noch nicht oder schon nicht
+    mehr. Führt beide Zeilen direkt hintereinander noch einmal aus.
 
 **Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
 (Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
-eine neue Verbindung?
+eine neue Verbindung, und wie groß ist es nach einigen Sekunden Übertragung?
 
 !!! question "Frage 2"
-    Wie lauten `rtt`, `mss`, `cwnd` und das Verfahren zur Überlastkontrolle? Wie
-    viele Bytes darf der Server ohne Bestätigung maximal senden (`cwnd` mal
-    `mss`)? Warum startet TCP mit so wenig, obwohl das Netz schnell ist?
+    Wie lauten auf der Serverseite `rtt`, `mss`, `cwnd` und das Verfahren zur
+    Überlastkontrolle? Wie viele Bytes darf der Server gerade ohne Bestätigung
+    senden (`cwnd` mal `mss`), und wie viel ist das gegenüber dem Startwert
+    von 10 Segmenten (RFC 6928)? Warum startet TCP so klein, obwohl das Netz
+    schnell ist?
 
 ## Aufgabe 3 · Latenz
 

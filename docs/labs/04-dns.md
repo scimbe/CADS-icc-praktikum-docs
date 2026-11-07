@@ -24,12 +24,20 @@ Nach dem Versuch könnt ihr …
 
 Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04b`.
 
+!!! warning "Zwei Namespaces"
+    Dieser Versuch legt **zwei** Namespaces an (`$NS-lab04` und `$NS-lab04b`).
+    Prüft vorher mit `kubectl get ns`, dass höchstens drei Namespaces belegt
+    sind (euer eigener zählt mit), und löscht alte Lab-Namespaces. Meldet der
+    Aufbau `Namespace … fehlt`, war die Grenze erreicht: Räumt auf und startet
+    ihn neu.
+
 === "Bash"
 
     ```bash
     export NS=wab123
     for n in lab04 lab04b; do
       kubectl create ns $NS-$n
+      kubectl get ns $NS-$n >/dev/null || { echo "Namespace $NS-$n fehlt (Grenze?)"; break; }
       until kubectl auth can-i create pods -n $NS-$n | grep -q yes \
          && kubectl auth can-i get pods -n $NS-$n | grep -q yes; do sleep 1; done
     done
@@ -83,6 +91,7 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     $NS = "wab123"
     foreach ($n in "lab04", "lab04b") {
       kubectl create ns "$NS-$n"
+      if (-not (kubectl get ns "$NS-$n" -o name 2>$null)) { "Namespace $NS-$n fehlt (Grenze?)"; break }
       do { Start-Sleep 1 } until ((kubectl auth can-i create pods -n "$NS-$n") -eq "yes" -and (kubectl auth can-i get pods -n "$NS-$n") -eq "yes")
     }
 
@@ -215,8 +224,21 @@ Mitschnitt auf Port 53 beim Aufruf eines **externen** Namens:
 verschiedene Namen werden angefragt? Vergesst nicht, dass zu jedem Namen zwei
 Anfragen gehören (IPv4 und IPv6).
 
-Wiederholt den Mitschnitt mit einem **Punkt am Ende** des Namens
-(`https://example.com.`).
+Wiederholt den Mitschnitt mit einem **Punkt am Ende** des Namens:
+
+=== "Bash"
+
+    ```bash
+    kubectl -n $NS-lab04 exec a -- sh -c "timeout 5 tcpdump -ni eth0 -l 'udp port 53' > /tmp/q.txt 2>/dev/null & \
+      sleep 1; curl -s -m5 -o /dev/null https://example.com.; sleep 1; wait; \
+      grep -cE ' (A|AAAA)\? ' /tmp/q.txt; grep -oE ' (A|AAAA)\? [^ ]+' /tmp/q.txt | sort | uniq -c"
+    ```
+
+=== "PowerShell"
+
+    ```powershell
+    kubectl -n "$NS-lab04" exec a -- sh -c "timeout 5 tcpdump -ni eth0 -l 'udp port 53' > /tmp/q.txt 2>/dev/null & sleep 1; curl -s -m5 -o /dev/null https://example.com.; sleep 1; wait; grep -cE ' (A|AAAA)\? ' /tmp/q.txt; grep -oE ' (A|AAAA)\? [^ ]+' /tmp/q.txt | sort | uniq -c"
+    ```
 
 !!! question "Frage 3"
     Wie viele Anfragen sind es mit und ohne Punkt am Ende? Wie groß wäre der
@@ -247,7 +269,7 @@ Der Client in `lab04b` will den Service `kasse` in `lab04` erreichen.
     ```
 
 **Vorhersage:** Geht der Kurzname? Wenn nein, welcher Fehler, und was liefert
-`C dig +search kasse`?
+`C dig +search +showsearch kasse`?
 
 !!! question "Frage 4"
     Warum findet die Suchliste den Service im anderen Namespace nicht, und wie
@@ -262,43 +284,48 @@ Der Client in `lab04b` will den Service `kasse` in `lab04` erreichen.
     kollidieren, haben schon echte Ausfälle und Datenabflüsse verursacht. Das
     ist ein Beispiel dafür, wie ein Resolver-Detail zum Sicherheitsthema wird.
 
-Löst im Client `lab04b` einen Namen auf, den es **nirgends** im Cluster gibt:
+Löst im Client `lab04b` einen Namen auf, den es **nirgends** im Cluster gibt
+(in `lab04b` gibt es keinen Service `web`). `+showsearch` zeigt jede Anfrage,
+die die Suchliste erzeugt, mit ihrer Antwort:
 
 === "Bash"
 
     ```bash
-    C dig +search +short web
-    C curl -sv -m3 http://web/ 2>&1 | grep -E "Trying|refused|resolve"
+    C sh -c "dig +search +showsearch web | grep -E 'status:|^;web|SOA'"
     ```
 
 === "PowerShell"
 
     ```powershell
-    C dig +search +short web
-    C sh -c "curl -sv -m3 http://web/ 2>&1 | grep -E 'Trying|refused|resolve'"
+    C sh -c "dig +search +showsearch web | grep -E 'status:|^;web|SOA'"
     ```
 
-**Vorhersage:** Was erwartet ihr? In der ICC zeigte sich zum Zeitpunkt der
-Entstehung dieser Anleitung ein Ergebnis, das nicht „unbekannter Name" lautet.
+**Vorhersage:** Wie viele Anfragen erwartet ihr, und in welcher Reihenfolge?
+Welche davon kann der Cluster-DNS nicht selbst beantworten?
 
-!!! note "Leere Ausgabe?"
-    Derzeit löst die ICC den kurzen Namen `web` nicht auf: `dig` bleibt leer,
-    `curl` meldet `Could not resolve host`. Beantwortet Frage 5 dann anhand
-    eurer Suchliste aus `/etc/resolv.conf`: Welche vollständigen Namen hat der
-    Resolver nacheinander probiert, und welcher davon hätte zu einer Adresse
-    unter `127.0.0.0/8` führen können?
+Je probiertem Namen erscheinen drei Zeilen: zuerst der Status (`NXDOMAIN` = den
+Namen gibt es nicht, `NOERROR` = es gibt ihn), dann der angefragte Name
+(`;web.…`) und zuletzt die Zone, die geantwortet hat (`SOA`). `dig` fragt nur
+nach IPv4 (`A`), deshalb ist es hier eine Anfrage pro Name und nicht zwei wie
+bei `curl` in Aufgabe 3.
 
 !!! question "Frage 5"
-    Welche Adresse liefert der Name, und warum liegt sie im Bereich
-    `127.0.0.0/8`? Welche Anfrage hat die Suchliste dabei erzeugt, und was sagt
-    das über die Reihenfolge der Suchdomänen? (Stichwort: *Name Collision*,
-    neue Top-Level-Domains.) Wie vermeidet man das?
+    Wie viele Namen probiert der Resolver, und in welcher Reihenfolge? Welche
+    Anfrage verlässt den Cluster, und woran erkennt ihr das in der
+    `SOA`-Zeile: Antwortet eure Cluster-Domain oder eine Zone im Internet?
+    Warum ist `web` als interner Name riskant, seit es die öffentliche
+    Top-Level-Domain `.web` gibt (Stichwort: *Name Collision*)? Wie vermeidet
+    man das? (Tipp: vollständiger Name mit Punkt am Ende, eigene Domain wie
+    `.internal` oder `home.arpa`, `ndots`.)
 
 ## Aufräumen
 
 ```bash
 kubectl delete ns $NS-lab04 $NS-lab04b
 ```
+
+Meldet `kubectl` für einen der beiden Namen `Forbidden`, gibt es diesen
+Namespace nicht (mehr). Prüft mit `kubectl get ns`.
 
 ## Selbsttest
 
