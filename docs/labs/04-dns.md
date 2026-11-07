@@ -26,8 +26,9 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
 
 !!! warning "Zwei Namespaces"
     Dieser Versuch legt **zwei** Namespaces an (`$NS-lab04` und `$NS-lab04b`).
-    Prüft vorher mit `kubectl get ns`, dass höchstens drei Namespaces belegt
-    sind (rechnet euren eigenen vorsichtshalber mit), und löscht alte Lab-Namespaces. Meldet der
+    Prüft vorher mit `kubectl get ns -l capsule.clastix.io/tenant=$NS`, dass
+    höchstens drei Namespaces belegt sind (euer eigener zählt mit), und löscht
+    alte Lab-Namespaces. Meldet der
     Aufbau `Namespace … fehlt`, war die Grenze erreicht: Räumt auf und startet
     ihn neu.
 
@@ -83,6 +84,7 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     kubectl -n $NS-lab04b wait --for=condition=Ready pod --all --timeout=180s
     A() { kubectl -n $NS-lab04 exec a -- "$@"; }
     C() { kubectl -n $NS-lab04b exec c -- "$@"; }
+    kubectl get ns $NS-lab04b >/dev/null 2>&1 && echo "Aufbau vollständig." || echo "WARNUNG: Aufbau unvollständig: $NS-lab04b fehlt. Die Fehler oben sind Folgefehler. Räumt auf (kubectl delete ns $NS-lab04), löscht alte Lab-Namespaces und startet den Aufbau neu."
     ```
 
 === "PowerShell"
@@ -136,6 +138,7 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     kubectl -n "$NS-lab04b" wait --for=condition=Ready pod --all --timeout=180s
     function A { kubectl -n "$NS-lab04" exec a -- @args }
     function C { kubectl -n "$NS-lab04b" exec c -- @args }
+    if (-not (kubectl get ns "$NS-lab04b" -o name 2>$null)) { Write-Warning "Aufbau unvollständig: $NS-lab04b fehlt. Die Fehler oben sind Folgefehler. Räumt auf (kubectl delete ns $NS-lab04), löscht alte Lab-Namespaces und startet den Aufbau neu." } else { "Aufbau vollständig." }
     ```
 
 ## Aufgabe 1 · Die resolv.conf
@@ -321,11 +324,12 @@ bei `curl` in Aufgabe 3.
 ## Aufräumen
 
 ```bash
-kubectl delete ns $NS-lab04 $NS-lab04b
+kubectl delete ns $NS-lab04
+kubectl delete ns $NS-lab04b
 ```
 
-Meldet `kubectl` für einen der beiden Namen `Forbidden`, gibt es diesen
-Namespace nicht (mehr). Prüft mit `kubectl get ns`.
+Jede Zeile wartet etwa eine Minute. Meldet die zweite Zeile `Forbidden`, gab es
+`$NS-lab04b` nicht (der Aufbau war abgebrochen). Das ist harmlos.
 
 ## Selbsttest
 

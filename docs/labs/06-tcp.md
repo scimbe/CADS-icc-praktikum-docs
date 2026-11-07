@@ -161,7 +161,8 @@ Verbindung drei Sekunden offen, bevor der Server antwortet.
 
 **Vorhersage:** Welche **RTT** erwartet ihr zwischen zwei Pods im selben Cluster
 (Millisekunden, Mikrosekunden)? Mit welchem **Congestion Window** (`cwnd`) beginnt
-eine neue Verbindung, und wie groß ist es nach einigen Sekunden Übertragung?
+eine neue Verbindung, und wie groß ist es nach etwa einer Sekunde Übertragung? (Der Wert
+schwankt von Lauf zu Lauf stark.)
 
 === "Bash"
 
@@ -211,10 +212,13 @@ Wartet drei Sekunden. Jetzt dieselbe Ansicht **während** einer gebremsten
 
 !!! warning "Nur PowerShell 7"
     Die folgenden Aufrufe schicken JSON an toxiproxy. Windows PowerShell 5.1
-    entfernt dabei die Anführungszeichen, toxiproxy antwortet dann mit
-    `bad request body: invalid character …`, und alle Messungen in Aufgabe 3
-    und 4 laufen ohne Störung. Prüft mit `$PSVersionTable.PSVersion`, dass ihr
-    in `pwsh` 7.4+ arbeitet.
+    entfernt dabei die Anführungszeichen. toxiproxy antwortet dann mit
+    `bad request body: invalid character …` oder `proxy not found`, und die
+    Messungen zeigen `code=000 exit=7` (oder ohne Störung `code=200`). Das sind
+    **keine** Messergebnisse. Prüft mit `$PSVersionTable.PSVersion`, dass ihr
+    in `pwsh` 7.4+ arbeitet. Habt ihr in 5.1 angefangen, öffnet `pwsh`, setzt
+    `KUBECONFIG` und führt den Aufbaublock erneut aus (`AlreadyExists` und
+    `unchanged` sind harmlos). Beginnt dann Aufgabe 3 von vorn.
 
 ## Aufgabe 3 · Latenz
 
@@ -231,7 +235,7 @@ weiterreicht, und messt die Zeit zunächst ohne Störung:
 
     ```bash
     A curl -s -XPOST http://$GIFT:8474/proxies -d "{\"name\":\"web\",\"listen\":\"0.0.0.0:9000\",\"upstream\":\"$SRV:8080\"}"; echo
-    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
     ```
 
 === "PowerShell"
@@ -239,7 +243,7 @@ weiterreicht, und messt die Zeit zunächst ohne Störung:
     ```powershell
     $body = @{name="web"; listen="0.0.0.0:9000"; upstream="${SRV}:8080"} | ConvertTo-Json -Compress
     A curl -s -XPOST "http://${GIFT}:8474/proxies" -d $body; ""
-    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -o /dev/null -w "ohne Stoerung: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     ```
 
 Jetzt 300 ms Verzögerung auf der Antwort:
@@ -248,14 +252,14 @@ Jetzt 300 ms Verzögerung auf der Antwort:
 
     ```bash
     A curl -s -XPOST http://$GIFT:8474/proxies/web/toxics -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; echo
-    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
+    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" http://$GIFT:9000/
     ```
 
 === "PowerShell"
 
     ```powershell
     A curl -s -XPOST "http://${GIFT}:8474/proxies/web/toxics" -d '{"name":"lat","type":"latency","attributes":{"latency":300}}'; ""
-    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
+    A curl -s -o /dev/null -w "mit 300 ms: code=%{http_code} exit=%{exitcode} connect=%{time_connect} gesamt=%{time_total}\n" "http://${GIFT}:9000/"
     ```
 
 **Vorhersage:** Wie viel länger dauert die Anfrage? Wird auch der **Verbindungsaufbau**

@@ -19,13 +19,18 @@
       Terminal**, startet `pwsh` und prüft mit `$PSVersionTable.PSVersion`,
       dass die Version 7.4 oder höher ist. In 5.1 scheitern einzelne
       Befehle, etwa die JSON-Daten in Versuch 06. Die `cmd.exe` wird nicht
-      unterstützt.
+      unterstützt. **Git Bash:** Führt in jedem neuen Terminal zuerst
+      `export MSYS2_ARG_CONV_EXCL='*'` aus. Sonst schreibt Git Bash Pfade wie
+      `/etc/resolv.conf` in `C:/Program Files/Git/…` um, bevor sie im Pod
+      ankommen.
     - **Jeder Versuch bekommt einen eigenen Sub-Namespace** (`$NS-labNN`).
       Aufgeräumt wird am Ende mit `kubectl delete ns $NS-labNN`; das dauert
       etwa eine Minute ohne Ausgabe, wartet ab. Ihr dürft **höchstens fünf
-      Namespaces** gleichzeitig haben, rechnet euren eigenen Namespace vorsichtshalber mit.
+      Namespaces** gleichzeitig haben, **euer eigener Namespace zählt mit**.
+      Zählen könnt ihr mit `kubectl get ns -l capsule.clastix.io/tenant=$NS`.
       Löscht deshalb jeden Lab-Namespace am Ende des Versuchs. Meldet `create ns`
-      `Cannot exceed Namespace quota`, wartet die folgende Schleife endlos:
+      `Cannot exceed Namespace quota`, wartet die Schleife im Aufbau in den
+      meisten Versuchen endlos (Versuch 04 bricht mit `Namespace … fehlt` ab):
       Brecht mit **Strg+C** ab, seht mit `kubectl get ns` nach und löscht
       alte Lab-Namespaces. Führt ihr den Aufbau ein zweites Mal aus, meldet
       `kubectl` `AlreadyExists`. Das ist harmlos.

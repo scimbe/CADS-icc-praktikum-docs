@@ -207,15 +207,16 @@ sonst nichts. Erweitert die vorhandene Regel `lager-aus` minimal.
 
 !!! warning "Namespace-Grenze"
     Löscht vorher den Namespace der Fehlersuche: `kubectl delete ns $NS-lab08`
-    (dauert etwa eine Minute). Prüft mit `kubectl get ns`, dass ihr unter fünf
-    Namespaces bleibt.
+    (dauert etwa eine Minute). Prüft mit
+    `kubectl get ns -l capsule.clastix.io/tenant=$NS`, dass ihr unter fünf
+    Namespaces bleibt (euer eigener zählt mit).
 
 Entwerft und baut in einem neuen Namespace `$NS-lab08b` diese Anwendung. Alles
 mit denselben Bausteinen wie in den früheren Versuchen:
 
 | Schicht  | Baustein                                  | Darf erreichen          |
 |----------|-------------------------------------------|-------------------------|
-| Frontend | nginx als Balancer (Versuch 07), 1 Pod    | nur `api`               |
+| Frontend | nginx als Balancer (Versuch 07), Deployment mit 1 Replikat | nur `api` |
 | `api`    | Webserver (`labsrv.py`), 2 Replikate      | nur `db`                |
 | `db`     | Webserver (`labsrv.py`), 1 Replikat       | nichts (keine Egress)   |
 
@@ -253,7 +254,9 @@ erwartet **und** was ihr bekommt:
 
 Das nginx-Image hat kein `curl`, deshalb `wget`: Exit `0` heißt „Antwort
 bekommen", alles andere „nicht erreicht". Heißen eure Objekte anders, passt die
-Namen an. `deploy/<name>` wählt einen Pod des Deployments.
+Namen an. `deploy/<name>` wählt einen Pod des Deployments. Steht vor `Exit 1`
+die Zeile `NotFound`, lief die Messung nicht: Prüft den Namen
+(`kubectl -n $NS-lab08b get deploy,pods`).
 
 !!! question "Frage 2 · Bewertung"
     Wo ist euer Entwurf noch schwach (zum Beispiel: Wer darf `api` direkt

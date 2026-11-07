@@ -288,6 +288,9 @@ ungeschickte Variante: nur die Freigabe zum Server, sonst nichts.
 
 **Vorhersage:** Wird der Name aufgelöst? Kommt die HTTP-Anfrage per Name durch, per IP?
 
+`getent` druckt bei Misserfolg nichts. Achtet auf `command terminated with exit
+code 2`.
+
 Nun die Freigabe für DNS, als eigene Regel daneben:
 
 === "Bash"
