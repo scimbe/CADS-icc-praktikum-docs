@@ -206,6 +206,22 @@ matrix
 
 **Vorhersage:** Wer erreicht wen, solange es keine Regel gibt?
 
+??? example "So sieht die Ausgabe aus (erst nach eurer Vorhersage aufklappen)"
+    Die Adressen sind bei euch andere; entscheidend ist, dass `SOLL` und `IST`
+    übereinstimmen und alle Pods `Running` sind.
+
+    === "Bash"
+
+        ![pruefen im Terminal unter macOS](../assets/img/01b-pruefen-bash.png){ width="500" }
+
+        ![matrix im Terminal unter macOS](../assets/img/01b-matrix-bash.png){ width="500" }
+
+    === "PowerShell"
+
+        ![pruefen in Windows Terminal](../assets/img/01b-pruefen-powershell.png){ width="560" }
+
+        ![matrix in Windows Terminal](../assets/img/01b-matrix-powershell.png){ width="560" }
+
 Jetzt eine Regel: Ins Subnetz `probe` darf nur, wer aus eurem Block kommt.
 Setzt euren Block in CIDR-Schreibweise ein:
 
@@ -235,6 +251,9 @@ Wartet einige Sekunden, dann `matrix`.
   nicht angelegt habt. Nehmt die nächste freie Adresse im selben
   Subnetz und tragt die Änderung in euren Adressplan ein. Legt Pods mit `auto`
   an, **bevor** ihr die Pods mit fester Adresse anlegt.
+- **`SOLL` und `IST` passen nicht zusammen:** `anlegen` mit dem Namen eines
+  Pods, den es schon gibt, ändert nur die geplante Adresse (`SOLL`), nicht die
+  vergebene (`IST`). Löscht den Pod und legt ihn neu an.
 - **`regel` wird abgelehnt:** Lest die Meldung von `kubectl` genau. Sie nennt
   das Feld und den Wert, der nicht passt.
 - **`matrix` zeigt einen Pod nicht:** Sie zeigt nur Pods im Zustand
