@@ -89,6 +89,7 @@ nav:
   - Praktika:
       - "00 · Onboarding": labs/00-onboarding.md
       - "01 · Adressierung": labs/01-adressierung.md
+      - "01b · Subnetze anlegen": labs/01b-subnetze.md
       - "02 · ICMP, TTL & MTU": labs/02-icmp-ttl-mtu.md
       - "03 · Virtuelle IPs": labs/03-virtuelle-ips.md
       - "04 · DNS": labs/04-dns.md

@@ -24,6 +24,7 @@ kurzen Kasten **„Warum das zählt"**, der den Praxisbezug zeigt.
 |-----|-------|-----------|
 | [00](labs/00-onboarding.md) | Onboarding | Zugang, Namespaces, Ressourcengrenzen |
 | [01](labs/01-adressierung.md) | Adressierung | Pod-Adressen, Maske, Standardroute |
+| [01b](labs/01b-subnetze.md) | Subnetze anlegen | Adressplan, feste Pod-Adressen, Regeln je Subnetz |
 | [02](labs/02-icmp-ttl-mtu.md) | ICMP, TTL, MTU | Ping, Traceroute, Pfad-MTU |
 | [03](labs/03-virtuelle-ips.md) | Virtuelle IPs | Service, Endpoints, Adressumsetzung |
 | [04](labs/04-dns.md) | DNS | Namensauflösung, Suchliste, `ndots` |
