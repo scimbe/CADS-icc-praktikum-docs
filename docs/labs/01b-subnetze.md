@@ -47,10 +47,15 @@ Ein eigener Namespace und vier Hilfsfunktionen:
   ICC die Adresse selbst (ein Pod „von außen").
 - `regel <subnetz> [<netz>/<präfix> …]` legt fest, aus welchen Netzen die Pods
   des Subnetzes erreichbar sind. Ohne Netz ist das Subnetz für alle anderen
-  gesperrt. Ein neuer Aufruf für dasselbe Subnetz ersetzt die alte Regel.
-- `pruefen` zeigt Soll- und Ist-Adresse jedes Pods und den Grund, falls ein Pod
-  keine Adresse bekommt.
-- `matrix` pingt von jedem Pod zu jedem und zeigt, wer wen erreicht.
+  gesperrt. Soll ein Subnetz für alle offen sein, schreibt ihr gar keine Regel
+  dafür oder nennt ein Netz, das jede IPv4-Adresse umfasst (welches Präfix hat
+  es?). Ein neuer Aufruf für dasselbe Subnetz ersetzt die alte Regel.
+- `pruefen` zeigt Soll- und Ist-Adresse jedes Pods. Bekommt ein Pod keine
+  Adresse, steht unter der Tabelle eine Zeile mit Podname und Grund.
+- `matrix` pingt von jedem Pod zu jedem und zeigt, wer wen erreicht (Zeile =
+  Absender, Spalte = Empfänger). Die Pods stehen alphabetisch sortiert; schreibt
+  eure Soll-Matrix in derselben Reihenfolge. Die Diagonale ist immer `ok`, denn
+  ein Pod erreicht sich selbst an jeder Regel vorbei.
 
 === "Bash"
 
@@ -176,7 +181,8 @@ Ein eigener Namespace und vier Hilfsfunktionen:
 ## Probelauf
 
 Bevor ihr euer Netz baut, prüft ihr die Werkzeuge mit **zwei Adressen aus
-eurem Block**: der ersten und der letzten nutzbaren Adresse. Setzt sie für
+eurem Block**: der ersten und der letzten nutzbaren Adresse (Netz- und
+Broadcastadresse des Blocks gehören nicht dazu). Setzt sie für
 `<erste>` und `<letzte>` ein. Dazu kommt ein Pod mit automatischer Adresse;
 legt ihn **zuerst** an.
 
@@ -219,12 +225,14 @@ Wartet einige Sekunden, dann `matrix`.
 
 ## Wenn etwas hängt
 
-- **Ein Pod bleibt in `ContainerCreating`:** `pruefen` zeigt in der Spalte
-  `GRUND`, warum er seine Adresse nicht bekommt. Ein Pod mit falscher Adresse
+- **Ein Pod bleibt hängen** (`pruefen` zeigt `Pending`, `kubectl get pods`
+  zeigt `ContainerCreating`): `pruefen` schreibt unter die Tabelle eine Zeile mit
+  Podname und Grund. Ein Pod mit falscher Adresse
   wird nicht repariert: Löscht ihn (`kubectl -n $NS-sn delete pod <name>`) und
   legt ihn mit der richtigen Adresse neu an.
-- **Eine geplante Adresse ist schon vergeben:** Auch Pods, die ihr nicht
-  angelegt habt, können sie haben. Nehmt die nächste freie Adresse im selben
+- **Eine geplante Adresse ist schon vergeben:** Steht sie in der Spalte `IST`
+  eines eurer Pods, habt ihr sie doppelt geplant. Sonst hat sie ein Pod, den ihr
+  nicht angelegt habt. Nehmt die nächste freie Adresse im selben
   Subnetz und tragt die Änderung in euren Adressplan ein. Legt Pods mit `auto`
   an, **bevor** ihr die Pods mit fester Adresse anlegt.
 - **`regel` wird abgelehnt:** Lest die Meldung von `kubectl` genau. Sie nennt
@@ -233,6 +241,10 @@ Wartet einige Sekunden, dann `matrix`.
   `Running`.
 - **Eine Regel wirkt nicht sofort:** Wartet nach `regel` einige Sekunden, bevor
   ihr messt.
+- **Eine Zelle der Matrix weicht vom Soll ab:** Seht mit
+  `kubectl -n $NS-sn get networkpolicy -o yaml` nach, welche Netze die Regel des
+  **Empfänger**-Subnetzes wirklich enthält, und rechnet nach, ob die Adresse des
+  Absenders darin liegt.
 
 !!! info "Was ihr nicht konfigurieren könnt"
     Masken, Routen und Schnittstellen im Pod bleiben gesperrt (Versuch 01,
