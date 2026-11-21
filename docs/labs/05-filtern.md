@@ -124,6 +124,34 @@ Ein Server mit Service, ein erlaubter Client (`gut`) und ein unerwünschter (`bo
     function B { kubectl -n "$NS-lab05" exec boese -- @args }
     ```
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen:** Eine **NetworkPolicy** ist ein Kubernetes-Objekt.
+    Sie wählt Pods über **Labels** aus (`podSelector`) und legt fest, welcher Verkehr
+    herein (Ingress) oder hinaus (Egress) darf. Durchgesetzt wird sie von der
+    Netzsoftware der Plattform.
+
+    **Rechnernetze-Wissen:** Was eine solche Regel im Netz bewirkt: Paketfilter nach
+    Absender, Ziel, Protokoll und Port; verworfene Pakete (Stille, Timeout) im
+    Unterschied zu zurückgewiesenen (sofortige Absage, `Connection refused`); die
+    Abhängigkeit von DNS, wenn ausgehender Verkehr gesperrt wird; und NAT beim Weg ins
+    Internet (viele Pod-Adressen, eine sichtbare Adresse).
+
+    Das Konzept Security Group oder Firewall kennt ihr auch aus der Cloud.
+    Kubernetes liefert nur die Schreibweise für die Regeln.
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktionen G und B?"
+
+    `G` führt einen Befehl im Pod `gut` aus, `B` im Pod `boese`
+    (`kubectl -n $NS-lab05 exec gut -- …` bzw. `… exec boese -- …`).
+    `SRV` ist die Pod-Adresse des Servers.
+
+    Wie in Versuch 02 spart das Tipparbeit. Der fachliche Grund für zwei Funktionen
+    ist ein anderer: Die Regel entscheidet nach dem **Absender**. Dieselbe Anfrage
+    `curl http://srv/` kann von `gut` gelingen und von `boese` scheitern. Mit `G`
+    und `B` messt ihr also dieselbe Anfrage aus beiden Perspektiven. `B` steht für
+    den Pod `boese` und hat sonst keine besondere Bedeutung.
+
 ## Aufgabe 1 · Ohne Regeln
 
 !!! abstract "Warum das zählt"

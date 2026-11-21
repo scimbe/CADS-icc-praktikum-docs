@@ -62,6 +62,19 @@ Versuch startet.
     $NS = "wab123"          # euer Namespace
     ```
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    Dieser Termin ist fast ausschließlich **Kubernetes-Handwerk**: Namespace, Quote, Pod,
+    Ressourcengrenzen und `kubectl` sind Bedienwissen über die Plattform, auf der
+    ihr arbeitet. Mit Rechnernetzen im engeren Sinn (Adressierung, Protokolle, Routing)
+    hat das noch wenig zu tun. Das fängt ab Versuch 01 an.
+
+    Warum trotzdem zuerst die Plattform? Jede spätere Messung läuft in einem Pod. Ihr
+    braucht ein Werkzeug, mit dem ihr Pods anlegt, in sie hineinseht und sie wieder
+    wegräumt. Kubernetes ist hier das Labor, nicht der Lernstoff. Nur eine
+    Rechnernetze-Beobachtung steckt schon drin: Die Frage nach IP und Maske eures
+    Pods (Frage 2), die ihr in Versuch 01 erklärt.
+
 ## Aufgabe 1 · Wo seid ihr?
 
 !!! abstract "Warum das zählt"
@@ -126,6 +139,20 @@ greifen. Wartet darauf, statt zu raten:
     Ein „forbidden"-Fehler direkt nach `create ns` ist kein Fehler in eurem
     Manifest. Die Rechte werden asynchron verteilt. Das gleiche Muster kennt ihr
     aus jeder Cloud: Eine neue Ressource ist nicht sofort überall sichtbar.
+
+??? info "Deep Dive in die Aufgabe: Warum steht in jedem Aufbau eine Warteschleife mit can-i?"
+
+    Die Schleife `until kubectl auth can-i … | grep -q yes` fragt wiederholt, ob ihr
+    im neuen Namespace Pods anlegen und lesen dürft, und hört erst auf, wenn die
+    Antwort `yes` lautet. Ohne sie läuft das nächste `kubectl apply` oft in ein
+    `forbidden`, weil die Plattform die Rechte erst kurz nach `create ns` verteilt
+    (siehe „Merke" oben).
+
+    Man nimmt die Schleife statt eines festen `sleep`, weil sie genau so lange
+    wartet, wie es nötig ist. Fachlich müsst ihr daran nur eines verstehen: In
+    verteilten Systemen ist ein Zustand nicht überall gleichzeitig sichtbar. Das
+    Muster „warten, bis es stimmt, statt zu raten" kommt in den Versuchen immer
+    wieder vor.
 
 ## Aufgabe 3 · Der erste Pod
 

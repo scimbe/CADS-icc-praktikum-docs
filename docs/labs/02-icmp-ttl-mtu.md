@@ -102,6 +102,38 @@ Nach dem Versuch könnt ihr …
     Die Shell auf dem Mac (zsh) deutet ein `?` in einer URL als Platzhalter und
     bricht ab. Setzt URLs mit `?` deshalb immer in Anführungszeichen.
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen** ist der Aufbau: zwei Pods, einer davon durch
+    Anti-Affinität auf einem anderen Knoten, und `kubectl exec`, um Befehle im
+    Pod auszuführen.
+
+    **Rechnernetze-Wissen** sind die Aufgaben selbst: ICMP als Fehlermelder,
+    TTL und Router-Hops, die MTU, Fragmentierung und das Flag „Don't Fragment" sowie
+    die MSS bei TCP. Dass die MTU hier unter den üblichen 1500 Byte liegt, ist eine Eigenschaft des
+    Overlay-Netzes der Plattform. Was das für Paketgrößen bedeutet, ist
+    Netzwissen.
+
+    Kubernetes dient nur dazu, euch einen Weg mit mehreren Stationen zu liefern.
+    `ping` und `traceroute` übt auch das Grundlagen-Praktikum in
+    [Blatt 01 · Netzwerkgrundlagen & Tools](https://scimbe.github.io/CADS-praktikum-docs/labs/01-netzwerkgrundlagen-tools/), TCP und
+    Segmentgrößen in [Blatt 04 · TCP/UDP & Congestion Control](https://scimbe.github.io/CADS-praktikum-docs/labs/04-tcp-udp-congestion/).
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktion A?"
+
+    `A` ist im Aufbau definiert als `A() { kubectl -n $NS-lab02 exec a -- "$@"; }`
+    (in PowerShell als `function A`). `A ping -c1 $SRV` führt also
+    `kubectl -n <ns>-lab02 exec a -- ping -c1 $SRV` aus. `$SRV` ist die IP des Pods
+    `srv`, die der Aufbau mit `kubectl get pod srv -o jsonpath=…` ausliest.
+
+    Man nimmt `A` statt des nackten Befehls, weil sonst jede Zeile Namespace, Podname
+    und `exec --` wiederholen müsste. Das kostet Tipparbeit und ist eine
+    Fehlerquelle (falscher Namespace, vergessenes `--`). Fachlich solltet ihr
+    Folgendes im Kopf behalten: Der Befehl läuft **im Pod**, nicht auf eurem
+    Rechner. Der Absender ist deshalb die Adresse von `a`, und die Pakete nehmen den
+    Weg, den ein Paket aus diesem Pod nimmt. Ein `?` in einer URL schützt ihr
+    trotzdem mit Anführungszeichen, denn das erste Parsen macht eure lokale Shell.
+
 ## Aufgabe 1 · Pakete sterben lassen
 
 !!! abstract "Warum das zählt"

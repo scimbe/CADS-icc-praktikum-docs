@@ -114,6 +114,32 @@ braucht keine Sonderrechte, anders als `tc`, das hier gesperrt ist.
     function A { kubectl -n "$NS-lab06" exec a -- @args }
     ```
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen:** Pods für Server, Client und Störer, `kubectl exec`
+    und Affinitätsregeln, die Pods auf denselben oder verschiedene Knoten legen.
+
+    **Rechnernetze-Wissen:** TCP selbst: Drei-Wege-Handshake und Verbindungsabbau,
+    Bestätigungen, RTT, MSS, Congestion Window und Empfangsfenster, die
+    Unterscheidung von Reset, Timeout und langsamer Verbindung sowie der
+    Durchsatz einer Strecke.
+
+    Der Pod-Aufbau ist nur der Prüfstand. Die Begriffe und Messgrößen, die ihr mit `tcpdump`,
+    `ss` und `iperf3` lest, sind in jedem TCP-Netz dieselben. Passende Grundlagen findet ihr in
+    [Blatt 04 · TCP/UDP & Congestion Control](https://scimbe.github.io/CADS-praktikum-docs/labs/04-tcp-udp-congestion/).
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktion A, und was sind SRV und GIFT?"
+
+    `A` führt einen Befehl im Client-Pod `a` aus (`kubectl -n $NS-lab06 exec a -- …`).
+    `SRV` und `GIFT` sind die Pod-Adressen von Server und Störer, die der Aufbau per
+    `kubectl get pod … -o jsonpath` ausliest. Ihr spart euch das Abschreiben von
+    Adressen, die sich bei jedem Aufbau ändern.
+
+    Im Pod ausgeführt heißt: Alle Messungen zeigen die Sicht des Clients. Den Zustand
+    der Verbindung auf der Serverseite lest ihr dagegen mit `kubectl exec srv`
+    direkt dort, wie Aufgabe 2 es zeigt. Auf welcher Seite man misst, ist eine
+    fachliche Entscheidung, keine Bequemlichkeit.
+
 ## Aufgabe 1 · Handshake und Abbau
 
 !!! abstract "Warum das zählt"
@@ -220,6 +246,20 @@ Wartet drei Sekunden. Jetzt dieselbe Ansicht **während** einer gebremsten
     in `pwsh` 7.4+ arbeitet. Habt ihr in 5.1 angefangen, öffnet `pwsh`, setzt
     `KUBECONFIG` und führt den Aufbaublock erneut aus (`AlreadyExists` und
     `unchanged` sind harmlos). Beginnt dann Aufgabe 3 von vorn.
+
+??? info "Deep Dive in die Aufgabe: Warum ist der Störer ein Proxy und kein tc?"
+
+    Mit dem Linux-Werkzeug `tc` könnte man Verzögerung oder Verluste direkt an
+    einer Schnittstelle einstellen. Das braucht Netzwerkrechte im Container, und die
+    sind in der ICC gesperrt (Versuch 01, Aufgabe 4). Deshalb steht im Aufbau ein
+    eigener Pod `gift` mit **toxiproxy**: ein TCP-Proxy, den ihr über seine
+    HTTP-Schnittstelle (Port 8474) konfiguriert.
+
+    Euer Client spricht dann nicht mehr mit `srv:8080`, sondern mit `gift:9000`; der
+    Proxy reicht die Daten weiter und baut die gewählte Störung ein. Das ist ein
+    Plattformwerkzeug, das ein fehlendes Recht umgeht, ohne dass ihr es braucht.
+    Die Frage, was ein Proxy für eure Messung bedeutet (Frage 3), bleibt fachlich
+    eure.
 
 ## Aufgabe 3 · Latenz
 

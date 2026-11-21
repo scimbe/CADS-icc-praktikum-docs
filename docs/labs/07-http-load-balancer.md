@@ -199,6 +199,36 @@ Der nginx-Pod ist das Modell eines Load Balancers: `proxy_pass http://web`
 leitet an den Service weiter, und die beiden Zeitlimits entsprechen den
 Timeouts eines ALB.
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen:** Ein Deployment mit drei Replikaten, ein Service
+    mit Endpoints, eine **Readiness-Probe** (sie entscheidet, ob ein Pod in die
+    Endpoints kommt), eine ConfigMap für die nginx-Konfiguration, `rollout`,
+    `scale` und `port-forward`.
+
+    **Rechnernetze-Wissen:** Wie ein Reverse-Proxy als Load Balancer arbeitet: Er
+    beendet die Verbindung des Clients und öffnet eine neue zum Ziel. Daraus folgen
+    die Client-Adresse im Header `X-Forwarded-For`, die Zeitlimits, die den Fehler
+    504 erzeugen, der Unterschied zu 502 und die Frage, wer einen Fehlercode
+    gesendet hat. Hinzu kommt das geordnete Abschalten von Zielen (Draining).
+
+    nginx und Service sind hier Bausteine, die ihr aus der Cloud als ALB mit Target
+    Group kennt. Das Verhalten des HTTP-Verkehrs ist der Lernstoff. Grundlagen zu
+    HTTP findet ihr in
+    [Blatt 07 · HTTP, REST & QUIC](https://scimbe.github.io/CADS-praktikum-docs/labs/07-http-rest-quic/).
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktion A?"
+
+    `A` ist wie in den früheren Versuchen die Abkürzung für
+    `kubectl -n $NS-lab07 exec a -- …`. Sie führt `curl` im Client-Pod `a` aus. Damit
+    kommt jede Anfrage aus dem Cluster und trifft den Balancer unter seinem
+    Servicenamen `lb`.
+
+    Das ist wichtig für Aufgabe 1: Zwischen `a` und dem Server sitzt `lb`. Überlegt
+    vor der Messung, welche TCP-Verbindung der Server eigentlich sieht. Erst
+    `port-forward` in Aufgabe 6 bringt eure Anfrage von außerhalb des Clusters
+    herein; vergleicht dort, ob sich etwas ändert.
+
 ## Aufgabe 1 · Wer ist der Client?
 
 !!! abstract "Warum das zählt"
