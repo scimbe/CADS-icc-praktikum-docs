@@ -1,5 +1,8 @@
 # IP-Netze auf der ICC
 
+!!! info "Erweiterung der Grundlagen-Aufgaben"
+    Dieses Praktikum überträgt die Theorie aus den Grundlagen-Aufgaben in eine Anwendungsdomäne: Cloud und Kubernetes, hier IP-Netze in einem Cluster mit Pods, Services und Load Balancer. Die Basis-Aufgaben zur Theorie findet ihr unter [Grundlagen-Aufgaben](https://scimbe.github.io/CADS-praktikum-docs/); bearbeitet sie zuerst bzw. begleitend.
+
 Ein Praktikum zu den zentralen Eigenschaften von IP-Netzen, durchgeführt auf
 einem Kubernetes-Cluster, der **ICC**. Ihr untersucht Adressen, ICMP, virtuelle
 IPs, DNS, Filterregeln, TCP und HTTP hinter einem Load Balancer. Dabei erlebt
