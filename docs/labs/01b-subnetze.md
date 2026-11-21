@@ -22,6 +22,22 @@ Ein Subnetz existiert hier also nicht als Maske im Pod (die bleibt `/32`),
 sondern als **Adressbereich in euren Regeln**. So arbeiten auch
 Sicherheitsgruppen und Netz-ACLs in der Cloud.
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen:** Annotation und Label an einem Pod, eine
+    NetworkPolicy als Objekt, `kubectl apply`. Das sind die Griffe, mit denen ihr der
+    Plattform sagt, welche Adresse ein Pod bekommen soll und wer ihn erreichen darf.
+
+    **Rechnernetze-Wissen:** Das eigentliche Thema. Ihr teilt einen Adressblock in
+    Subnetze, bestimmt Netzadresse, Präfixlänge, Hostbereich und Broadcast und
+    entscheidet, welche Absenderadressen in einem CIDR-Block liegen. Ob die
+    Rechnung stimmt, zeigt später die Erreichbarkeitsmatrix: Rechnet ihr falsch,
+    lässt die Regel den falschen Pod durch.
+
+    Die Plattform nimmt euch die Rechnung nicht ab. Das Subnetting selbst übt das
+    Grundlagen-Praktikum in
+    [Blatt 02 · IPv4-Subnetting & ARP](https://scimbe.github.io/CADS-praktikum-docs/labs/02-subnetting-arp/).
+
 !!! warning "Euren Adressblock bekommt ihr in der Veranstaltung"
     Adressblock und Anforderungen an die Subnetze teilt die Kursleitung in der
     Stunde aus. Verwendet **nur Adressen aus eurem Block**. Der Adressraum der
@@ -177,6 +193,31 @@ Ein eigener Namespace und vier Hilfsfunktionen:
     In einem neuen Terminal setzt ihr `KUBECONFIG` und `NS` und führt den Block
     noch einmal aus. `kubectl create ns` meldet dann `AlreadyExists`, das ist
     harmlos.
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktionen anlegen, regel, pruefen und matrix?"
+
+    Alle vier sind Shell-Funktionen aus dem Aufbaublock; sie rufen im Hintergrund
+    `kubectl` auf.
+
+    - **`anlegen`** schreibt ein Pod-Manifest mit Label `subnetz=…` und, wenn ihr
+      eine Adresse nennt, der Annotation `cni.projectcalico.org/ipAddrs`, und
+      schickt es per `kubectl apply` an die Plattform.
+    - **`regel`** baut eine NetworkPolicy für alle Pods mit dem Subnetz-Label und
+      trägt eure Netze als `ipBlock` ein. Ohne Netz steht dort `ingress: []`, also
+      „niemand darf herein".
+    - **`pruefen`** listet mit `kubectl get pods` Soll-Adresse (Annotation) und
+      Ist-Adresse (`status.podIP`) nebeneinander und zeigt Fehlermeldungen der
+      Adressvergabe.
+    - **`matrix`** startet in jedem laufenden Pod per `kubectl exec` einen
+      `ping -c1 -W1` gegen jede Adresse und druckt `ok` oder `-`.
+
+    Man nimmt sie statt der nackten Befehle, weil das YAML bei jedem Pod und jeder
+    Regel gleich aussieht (Tippfehler und falsche Einrückung wären die häufigste
+    Fehlerquelle) und weil die Matrix sonst aus n mal n Einzelaufrufen bestünde. Was
+    die Funktionen nicht tun: rechnen. Welche Adresse in welches Subnetz gehört und
+    welches CIDR wen erfasst, bleibt eure Aufgabe. Beachtet außerdem: `matrix`
+    misst mit **ICMP-Ping**. Ein `-` heißt „keine Antwort bekommen", nicht
+    automatisch „Regel greift".
 
 ## Probelauf
 

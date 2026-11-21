@@ -141,6 +141,34 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     if (-not (kubectl get ns "$NS-lab04b" -o name 2>$null)) { Write-Warning "Aufbau unvollständig: $NS-lab04b fehlt. Die Fehler oben sind Folgefehler. Räumt auf (kubectl delete ns $NS-lab04), löscht alte Lab-Namespaces und startet den Aufbau neu." } else { "Aufbau vollständig." }
     ```
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen:** Der Cluster hat einen eigenen DNS-Dienst
+    (CoreDNS), jeder Pod bekommt seine `resolv.conf` automatisch, und ein Service
+    bekommt einen Namen der Form `<service>.<namespace>.svc.<cluster-domain>`.
+    Namespaces gliedern den Cluster.
+
+    **Rechnernetze-Wissen:** Wie Namensauflösung funktioniert: Resolver und
+    Nameserver, Suchliste, `ndots`, voll qualifizierte Namen (FQDN), Anfragetypen A und
+    AAAA, die Antwortstati `NOERROR` und `NXDOMAIN` und der Transport über Port 53.
+    Alles, was ihr mit `dig` und `tcpdump` seht, gilt auch außerhalb von
+    Kubernetes.
+
+    Kubernetes ist hier das Mittel, das dem Pod eine Suchliste mit
+    Namespace-Teilen mitgibt. Warum diese Suchliste mehr Anfragen erzeugt, ist
+    DNS-Wissen.
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktionen A und C?"
+
+    Der Aufbau definiert zwei Abkürzungen: `A` führt einen Befehl im Pod `a` im
+    Namespace `lab04` aus, `C` im Pod `c` im Namespace `lab04b`. Dahinter steckt
+    jeweils `kubectl -n … exec … -- <Befehl>`.
+
+    Man hat zwei, weil Aufgabe 4 zwei **Absender in zwei Namespaces** braucht: Ob ein
+    Name aufgelöst wird, hängt von der Suchliste des fragenden Pods ab, und die enthält
+    den Namespace des Pods. Die Wahl zwischen `A` und `C` ist deshalb schon Teil des
+    Experiments: Ihr müsst vorher überlegen, aus wessen Sicht ihr fragt.
+
 ## Aufgabe 1 · Die resolv.conf
 
 !!! abstract "Warum das zählt"

@@ -136,6 +136,25 @@ Zwei Pods, einmal auf demselben Knoten und einmal auf verschiedenen.
 Die Spalte `NODE` zeigt, wo die Pods laufen. `nah` teilt sich den Knoten mit
 `a`, `fern` liegt auf einem anderen.
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen** ist alles, was mit der Plattform zu tun hat: ein
+    Pod ist die kleinste Einheit, die ihr startet; er läuft auf einem **Knoten**
+    (einem Rechner des Clusters); `kubectl exec` führt einen Befehl im Pod aus.
+
+    **Rechnernetze-Wissen** ist das, was ihr daran beobachtet: IP-Adresse und
+    Präfixlänge, die Standardroute, die Nachbartabelle (ARP), die TTL und der Router
+    als Weiterleiter von Paketen. Wie ein Pod an seine Adresse kommt, ist
+    Plattformtechnik. Was die Adresse, die Maske und die Route für den Weg eines
+    Pakets bedeuten, ist Rechnernetze.
+
+    Kubernetes ist hier nur das Mittel, mit dem ihr ohne eigene Hardware ein kleines
+    Netz bekommt, in das ihr hineinsehen könnt. Die Grundlagen zu Adressen, `ping`
+    und `traceroute` übt das Grundlagen-Praktikum in
+    [Blatt 01 · Netzwerkgrundlagen & Tools](https://scimbe.github.io/CADS-praktikum-docs/labs/01-netzwerkgrundlagen-tools/), die
+    Nachbartabelle (ARP) in
+    [Blatt 02 · IPv4-Subnetting & ARP](https://scimbe.github.io/CADS-praktikum-docs/labs/02-subnetting-arp/).
+
 ## Aufgabe 1 · Das Netz eines Pods
 
 !!! abstract "Warum das zählt"
@@ -190,6 +209,19 @@ kubectl -n $NS-lab01 exec a -- ip neigh
     Würde ein anderer Pod auf demselben Knoten dieselbe MAC-Adresse für
     `169.254.1.1` sehen? Begründet, warum ein Pod die MAC-Adresse seines
     **Nachbarpods** nie sieht.
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Pods nah und fern?"
+
+    Um zu sehen, was ein Router-Hop an der TTL ändert, braucht ihr zwei Fälle zum
+    Vergleich: einen Partner auf **demselben** Knoten und einen auf einem
+    **anderen**. Welchen Knoten ein Pod bekommt, entscheidet normalerweise der
+    Scheduler von Kubernetes. Mit `podAffinity` (`nah`) und `podAntiAffinity`
+    (`fern`) im Aufbau zwingt ihr ihn zu den beiden Fällen, statt auf Zufall zu
+    hoffen.
+
+    Das ist reines Plattformwerkzeug. Fachlich bleibt euer Teil: Aus der
+    TTL und der Zahl der Zwischenstationen auf den Weg der Pakete zu schließen
+    (Frage 3).
 
 ## Aufgabe 3 · Hops zählen
 

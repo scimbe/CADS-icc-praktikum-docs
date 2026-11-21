@@ -118,6 +118,36 @@ Drei identische Webserver hinter einem Service, dazu ein Client-Pod.
     function A { kubectl -n "$NS-lab03" exec a -- @args }
     ```
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    **Kubernetes-Anwendungswissen:** Ein **Deployment** hält drei gleiche Pods am
+    Laufen, ein **Service** gibt ihnen einen festen Namen und eine feste Adresse, die
+    **Endpoints** sind die Liste der Pods, die gerade bereit sind, und der
+    **Selector** verbindet beide über Labels.
+
+    **Rechnernetze-Wissen:** Was diese virtuelle Adresse auf Netzebene bedeutet. Sie
+    gehört keiner Schnittstelle und antwortet deshalb nicht auf ICMP, TCP-Verbindungen
+    dagegen werden auf einen Server verteilt. Die Verteilung geschieht pro
+    Verbindung (Lastverteilung auf Transportebene), und die Zieladresse wird
+    umgeschrieben (DNAT, eine Form von NAT). Welche Quelladresse der Server sieht,
+    hängt davon ab, wo umgeschrieben wird.
+
+    Kubernetes liefert hier den Baustein „virtuelle IP", den ihr aus Lehrbüchern
+    vom Load Balancer kennt. Die Aufgaben fragen nach dessen Verhalten im Netz, nicht
+    nach der YAML-Syntax.
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktion A und die Variable CIP?"
+
+    `CIP` ist die ClusterIP des Service. Der Aufbau liest sie mit
+    `kubectl get svc web -o jsonpath='{.spec.clusterIP}'` aus, damit ihr sie nicht
+    abschreiben müsst. `A` ist eine Abkürzung für
+    `kubectl -n $NS-lab03 exec a -- …`: Der Befehl dahinter läuft im Client-Pod `a`.
+
+    Beides spart Tipparbeit und verhindert Verwechslungen mit dem Namespace. Fachlich
+    wichtig: Weil `A` im Pod ausführt, ist der Pod `a` der Absender eurer Messungen,
+    nicht euer Rechner. `CIP` und `A` leben nur im Terminal, in dem ihr den
+    Aufbau ausgeführt habt. Ist `CIP` leer, schneidet `tcpdump` später nichts mit.
+
 ## Aufgabe 1 · Die Adresse, die es nicht gibt
 
 !!! abstract "Warum das zählt"

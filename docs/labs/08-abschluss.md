@@ -65,6 +65,29 @@ Notepad; speichern und schließen) oder
 `kubectl apply -f x.yaml`. JSON-Patches mit `-p '{…}'` scheitern in Windows
 PowerShell 5.1.
 
+??? info "Deep Dive in die Aufgabe: Was hier Kubernetes ist und was Rechnernetze"
+
+    In diesem Termin gibt es keine Anleitung mehr, deshalb zählt die Unterscheidung
+    besonders. **Kubernetes-Anwendungswissen** braucht ihr, um den Zustand zu
+    lesen: `get pods`, `get endpoints`, `describe`, `logs`, `get networkpolicy`,
+    `edit`. **Rechnernetze-Wissen** braucht ihr, um die Messungen zu deuten: Was
+    sagt ein sofortiger Fehler im Vergleich zu Stille, welche Schicht passt zu einem
+    curl-Code, wer erzeugt einen Statuscode?
+
+    Wer nur die Befehle kennt, sammelt Ausgaben. Wer die Netzthemen der
+    Versuche 01 bis 07 verstanden hat, ordnet sie einer Ursache zu. Das ist der
+    eigentliche Prüfstein dieses Termins.
+
+??? info "Deep Dive in die Aufgabe: Warum gibt es die Hilfsfunktion T?"
+
+    `T` ist die Abkürzung für `kubectl -n $NS-lab08 exec t -- …`: Der Befehl läuft im
+    Werkzeug-Pod `t` aus dem Aufbau. Wie `A` oder `G` in den Versuchen davor spart
+    das Tipparbeit und verhindert, im falschen Namespace zu messen.
+
+    Beachtet, dass `T` nur aus der Sicht von `t` misst. Ob ein Fehler am Absender
+    liegt (zum Beispiel an dessen Label) oder am Ziel, könnt ihr oft nur im
+    Vergleich mit einem anderen Absender klären.
+
 ## Fehlersuche
 
 Pro Fall gilt dasselbe Vorgehen: **Symptom messen, Vermutung aufschreiben,
