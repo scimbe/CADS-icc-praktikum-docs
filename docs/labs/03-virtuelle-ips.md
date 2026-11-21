@@ -125,12 +125,12 @@ Drei identische Webserver hinter einem Service, dazu ein Client-Pod.
     **Endpoints** sind die Liste der Pods, die gerade bereit sind, und der
     **Selector** verbindet beide über Labels.
 
-    **Rechnernetze-Wissen:** Was diese virtuelle Adresse auf Netzebene bedeutet. Sie
-    gehört keiner Schnittstelle und antwortet deshalb nicht auf ICMP, TCP-Verbindungen
-    dagegen werden auf einen Server verteilt. Die Verteilung geschieht pro
-    Verbindung (Lastverteilung auf Transportebene), und die Zieladresse wird
-    umgeschrieben (DNAT, eine Form von NAT). Welche Quelladresse der Server sieht,
-    hängt davon ab, wo umgeschrieben wird.
+    **Rechnernetze-Wissen:** Was diese virtuelle Adresse auf Netzebene bedeutet. Die
+    Fragen dazu stellen die Aufgaben: Gehört die Adresse überhaupt einer
+    Schnittstelle, und was folgt daraus für `ping` und für TCP? Wird pro Paket oder
+    pro Verbindung verteilt? Wo wird die Zieladresse umgeschrieben (Stichwort NAT),
+    und welche Quelladresse sieht dann der Server? Das sind Fragen zu Adressen,
+    Protokollen und Adressumsetzung, nicht zu Kubernetes.
 
     Kubernetes liefert hier den Baustein „virtuelle IP", den ihr aus Lehrbüchern
     vom Load Balancer kennt. Die Aufgaben fragen nach dessen Verhalten im Netz, nicht

@@ -164,10 +164,11 @@ Ein Service `kasse` im Namespace `lab04`, ein Client im Nachbar-Namespace `lab04
     Namespace `lab04` aus, `C` im Pod `c` im Namespace `lab04b`. Dahinter steckt
     jeweils `kubectl -n … exec … -- <Befehl>`.
 
-    Man hat zwei, weil Aufgabe 4 zwei **Absender in zwei Namespaces** braucht: Ob ein
-    Name aufgelöst wird, hängt von der Suchliste des fragenden Pods ab, und die enthält
-    den Namespace des Pods. Die Wahl zwischen `A` und `C` ist deshalb schon Teil des
-    Experiments: Ihr müsst vorher überlegen, aus wessen Sicht ihr fragt.
+    Man hat zwei, weil Aufgabe 4 zwei **Absender in zwei Namespaces** braucht:
+    Dieselbe Frage nach demselben Namen wird aus zwei verschiedenen Pods gestellt.
+    Die Wahl zwischen `A` und `C` ist deshalb schon Teil des Experiments: Ihr müsst
+    vorher überlegen, aus wessen Sicht ihr fragt, und vergleicht dazu die
+    `resolv.conf` beider Pods aus Aufgabe 1.
 
 ## Aufgabe 1 · Die resolv.conf
 

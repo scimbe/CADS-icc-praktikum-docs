@@ -224,10 +224,10 @@ Timeouts eines ALB.
     kommt jede Anfrage aus dem Cluster und trifft den Balancer unter seinem
     Servicenamen `lb`.
 
-    Das ist wichtig für Aufgabe 1: Die Adresse, die der Server als Client sieht, ist
-    die von `lb` und nicht die von `a`. Erst `port-forward` in Aufgabe 6 bringt eure
-    Anfrage von außerhalb des Clusters herein, und dort sieht die Antwort wieder
-    anders aus.
+    Das ist wichtig für Aufgabe 1: Zwischen `a` und dem Server sitzt `lb`. Überlegt
+    vor der Messung, welche TCP-Verbindung der Server eigentlich sieht. Erst
+    `port-forward` in Aufgabe 6 bringt eure Anfrage von außerhalb des Clusters
+    herein; vergleicht dort, ob sich etwas ändert.
 
 ## Aufgabe 1 · Wer ist der Client?
 
